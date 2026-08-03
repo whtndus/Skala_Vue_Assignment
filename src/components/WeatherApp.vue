@@ -18,19 +18,20 @@ const weatherList = ref([
 // 3. 양방향 바인딩 및 한글 처리 (:value + @input)
 // ──────────────────────────────────────────────
 // v-model은 한글 IME 조합 중 글자가 한 박자 늦게 반영되는 이슈가 있어,:value와 @input 이벤트를 직접 바인딩하여 실시간 동기화를 보장한다.
-const searchText = ref('')
+const searchQuery = ref('')
+const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 
 // @input 핸들러: 이벤트 객체에서 최신 입력값을 꺼내 ref에 즉시 반영
 const onInput = (event) => {
-  searchText.value = event.target.value
+  searchQuery.value = event.target.value
 }
 
 // ──────────────────────────────────────────────
 // 2. computed — 검색어 기반 실시간 필터링
 // ──────────────────────────────────────────────
-// searchText가 변할 때마다 자동으로 재계산되어 일치하는 도시만 걸러낸 새 배열을 반환
-const filteredList = computed(() => {
-  const query = searchText.value.trim()
+// searchQuery가 변할 때마다 자동으로 재계산되어 일치하는 도시만 걸러낸 새 배열을 반환
+const filteredWeatherList = computed(() => {
+  const query = searchQuery.value.trim()
   if (!query) return weatherList.value
   return weatherList.value.filter((city) => city.name.includes(query))
 })
@@ -40,7 +41,7 @@ const filteredList = computed(() => {
 // ──────────────────────────────────────────────
 // 추가 기능: 검색어에 매칭되는 도시명을 찾아 UI에 표시
 const matchedCity = computed(() => {
-  const query = searchText.value.trim()
+  const query = searchQuery.value.trim()
   if (!query) return ''
   const found = weatherList.value.find((city) => city.name.includes(query))
   return found ? found.name : ''
@@ -50,10 +51,8 @@ const matchedCity = computed(() => {
 // 3. 이벤트 핸들링 — 카드 클릭 시 도시 선택
 // ──────────────────────────────────────────────
 // 함수를 분리하여 재사용성과 가독성을 높였다.
-const selectedCity = ref('')
-
 const selectCity = (cityName) => {
-  selectedCity.value = cityName
+  selectedCityInfo.value = `${cityName}이 선택되었습니다.`
 }
 
 // ──────────────────────────────────────────────
@@ -67,19 +66,17 @@ const showDetail = (cityName, status) => {
 // ──────────────────────────────────────────────
 // 5. watch — 선택 도시 변경 감시
 // ──────────────────────────────────────────────
-// selectedCity 값이 바뀔 때마다 콘솔에 로그를 남겨 디버깅에 활용한다.
-watch(selectedCity, (newCity, oldCity) => {
-  console.log(`📌 [watch] 선택 도시 변경: "${oldCity || '없음'}" → "${newCity}"`)
+// selectedCityInfo의 문구 변화를 감시하여 후속 로그를 처리한다.
+watch(selectedCityInfo, (newInfo) => {
+  console.log(`[watch 감지] 상태 바 문구가 업데이트되었습니다 -> "${newInfo}"`)
 })
 
 // ──────────────────────────────────────────────
 // 6. watchEffect — 검색어 자동 추적
 // ──────────────────────────────────────────────
-// 의존성을 명시하지 않아도 내부에서 참조하는 반응형 데이터를 자동 감지하여 searchText가 변할 때마다 실행
+// 의존성을 명시하지 않아도 내부에서 참조하는 반응형 데이터를 자동 감지하여 searchQuery가 변할 때마다 실행
 watchEffect(() => {
-  if (searchText.value) {
-    console.log(`🔎 [watchEffect] 검색어 "${searchText.value}" → ${filteredList.value.length}건 매칭`)
-  }
+  console.log(`[watchEffect 자동 호출] 현재 검색어 '${searchQuery.value}'에 매칭되는 API 데이터를 필터링합니다.`)
 })
 
 // ──────────────────────────────────────────────
@@ -117,12 +114,12 @@ const getCardGradient = (status) => {
         <input
           type="text"
           placeholder="검색할 도시 이름을 입력하세요"
-          :value="searchText"
+          :value="searchQuery"
           @input="onInput"
           class="search-input"
         />
         <!-- [추가] 교안에는 검색어만 표시하지만, 여기서는 매칭 도시까지 안내 -->
-        <p class="search-result" v-if="searchText.trim()">
+        <p class="search-result" v-if="searchQuery.trim()">
           검색 중인 도시:
           <strong v-if="matchedCity">{{ matchedCity }}</strong>
           <span v-else class="no-result">일치하는 도시가 없습니다.</span>
@@ -131,14 +128,10 @@ const getCardGradient = (status) => {
     </section>
 
     <!-- 선택 상태바 — 카드 클릭 결과 표시
-        v-if/v-else로 초기 안내 메시지를 분리 표시 -->
-    <div class="status-bar" v-if="selectedCity">
-      <span class="status-icon">📍</span>
-      <span>{{ selectedCity }}이 선택되었습니다.</span>
-    </div>
-    <div class="status-bar status-bar-empty" v-else>
-      <span class="status-icon">💡</span>
-      <span>카드를 클릭하거나 검색해 보세요.</span>
+        selectedCityInfo에 저장된 전체 문구를 그대로 표시 -->
+    <div class="status-bar">
+      <span class="status-icon">{{ selectedCityInfo === '카드를 클릭하거나 검색해 보세요.' ? '💡' : '📍' }}</span>
+      <span>{{ selectedCityInfo }}</span>
     </div>
 
     <!-- 지역별 날씨 현황 — v-for 배열 렌더링
@@ -147,11 +140,11 @@ const getCardGradient = (status) => {
     <section class="weather-section">
       <h2>🌏 지역별 날씨 현황</h2>
       <div class="weather-grid">
-        <!-- v-for: filteredList를 순회, :key에 weather.id 바인딩 -->
+        <!-- v-for: filteredWeatherList를 순회, :key에 weather.id 바인딩 -->
         <!-- @click: 카드 클릭 시 selectCity 함수 호출 → 상태바 업데이트 -->
         <!-- :class: 날씨 상태에 따라 동적으로 그라데이션 클래스 적용 -->
         <div
-          v-for="weather in filteredList"
+          v-for="weather in filteredWeatherList"
           :key="weather.id"
           class="weather-card"
           :class="getCardGradient(weather.status)"
@@ -191,8 +184,8 @@ const getCardGradient = (status) => {
       </div>
 
       <!-- 검색 결과가 0건일 때 안내 메시지 -->
-      <div class="no-data" v-if="filteredList.length === 0">
-        <p>😢 검색 결과가 없습니다.</p>
+      <div class="no-data" v-if="filteredWeatherList.length === 0">
+        <p>😢 검색 결과와 일치하는 도시가 없습니다.</p>
       </div>
     </section>
   </div>
