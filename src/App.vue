@@ -1,15 +1,15 @@
 <script setup>
-import WeatherApp from './components/WeatherApp.vue'
+import WeatherParent from './components/WeatherParent.vue'
 </script>
 
 <template>
   <div class="app-container">
-    <WeatherApp />
+    <WeatherParent />
   </div>
 </template>
 
 <style scoped>
 .app-container {
-  padding: 1rem 0;
+  padding: 1.5rem 0;
 }
 </style>
