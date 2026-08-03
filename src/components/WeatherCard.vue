@@ -48,9 +48,10 @@ const getCardGradient = (status) => {
     <div class="card-body">
       <p class="temp">현재 기온: {{ cityItem.temp }}°C</p>
 
-      <!-- 조건부 렌더링 (v-if / v-else) 기온 25도 기준 라벨 표시 -->
+      <!-- 기온에 따라 더움 / 보통 / 선선함 3단계 라벨 표시 -->
       <span v-if="cityItem.temp >= 25" class="label label-hot">🔥 더움 (25도 이상)</span>
-      <span v-else class="label label-cool">❄️ 선선함 (25도 미만)</span>
+      <span v-else-if="cityItem.temp >= 20" class="label label-normal">🌤️ 보통 (20~24도)</span>
+      <span v-else class="label label-cool">❄️ 선선함 (20도 미만)</span>
     </div>
 
     <div class="card-footer">
@@ -171,6 +172,13 @@ const getCardGradient = (status) => {
 .label-hot {
   background: rgba(255, 255, 255, 0.25);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.label-normal {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
   border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(4px);
 }
