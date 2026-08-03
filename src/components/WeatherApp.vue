@@ -50,6 +50,23 @@ const matchedCity = computed(() => {
 })
 
 // ──────────────────────────────────────────────
+// computed — 통계 정보
+// ──────────────────────────────────────────────
+// 현재 필터링된 결과 개수
+const resultCount = computed(() => filteredWeatherList.value.length)
+
+// 전체 도시 평균 기온 (소수점 1자리)
+const avgTemp = computed(() => {
+  const total = weatherList.value.reduce((sum, c) => sum + c.temp, 0)
+  return (total / weatherList.value.length).toFixed(1)
+})
+
+// 가장 더운 도시
+const hottestCity = computed(() =>
+  [...weatherList.value].sort((a, b) => b.temp - a.temp)[0]
+)
+
+// ──────────────────────────────────────────────
 // 3. 이벤트 핸들링 — 카드 클릭 시 도시 선택
 // ──────────────────────────────────────────────
 // 함수를 분리하여 재사용성과 가독성을 높였다.
@@ -135,6 +152,22 @@ const getCardGradient = (status) => {
       <span class="status-icon">{{ selectedCityInfo === '카드를 클릭하거나 검색해 보세요.' ? '💡' : '📍' }}</span>
       <span>{{ selectedCityInfo }}</span>
     </div>
+
+    <!-- 통계 요약 섹션 — computed 활용 -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <span class="stat-label">검색 결과</span>
+        <span class="stat-value">{{ resultCount }}<small>개 도시</small></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">전체 평균 기온</span>
+        <span class="stat-value">{{ avgTemp }}<small>°C</small></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">가장 더운 도시</span>
+        <span class="stat-value">{{ hottestCity.name }}<small> {{ hottestCity.temp }}°C</small></span>
+      </div>
+    </section>
 
     <!-- 지역별 날씨 현황 — v-for 배열 렌더링
         :key에 고유 id를 바인딩하여 Vue의 가상 DOM 효율적 패치 보장
@@ -460,6 +493,53 @@ h2 {
 
 .detail-btn:active {
   transform: scale(0.97);
+}
+
+/* Stats Section */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: #888;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #4a90d9;
+  line-height: 1.2;
+}
+
+.stat-value small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #888;
+  margin-left: 2px;
 }
 
 /* No Data */
