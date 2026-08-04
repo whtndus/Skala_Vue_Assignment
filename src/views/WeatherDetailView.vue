@@ -11,15 +11,9 @@ const weatherStore = useWeatherStore()
 const { isSearching, searchError } = storeToRefs(weatherStore)
 
 const city = computed(() => weatherStore.findWeatherById(route.params.cityId))
-const dataSourceLabel = computed(() =>
-  city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : 'Mock Data 관측 정보',
-)
-const precipitationLabel = computed(() =>
-  city.value?.precipitationType === 'rainfall' ? '최근 1시간 강수량' : '강수 확률',
-)
-const precipitationUnit = computed(() =>
-  city.value?.precipitationType === 'rainfall' ? 'mm' : '%',
-)
+const dataSourceLabel = computed(() => (city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : 'Mock Data 관측 정보'))
+const precipitationLabel = computed(() => (city.value?.precipitationType === 'rainfall' ? '최근 1시간 강수량' : '강수 확률'))
+const precipitationUnit = computed(() => (city.value?.precipitationType === 'rainfall' ? 'mm' : '%'))
 const homeRoute = computed(() => ({
   name: 'weather-home',
   query: {
@@ -91,7 +85,9 @@ onMounted(async () => {
           </div>
           <div>
             <dt>{{ precipitationLabel }}</dt>
-            <dd>{{ city.precipitation }}<small>{{ precipitationUnit }}</small></dd>
+            <dd>
+              {{ city.precipitation }}<small>{{ precipitationUnit }}</small>
+            </dd>
           </div>
           <div>
             <dt>체감 온도</dt>
@@ -116,7 +112,10 @@ onMounted(async () => {
       <span aria-hidden="true">🗺️</span>
       <h1>도시 정보를 찾을 수 없습니다</h1>
       <p v-if="searchError">{{ searchError }}</p>
-      <p v-else><strong>{{ route.params.cityId }}</strong>에 해당하는 관측 정보가 없습니다.</p>
+      <p v-else>
+        <strong>{{ route.params.cityId }}</strong
+        >에 해당하는 관측 정보가 없습니다.
+      </p>
       <div class="navigation-actions">
         <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
         <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>
@@ -170,11 +169,21 @@ onMounted(async () => {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
 }
 
-.detail-sunny { background: linear-gradient(135deg, #ff9a56 0%, #e8532e 100%); }
-.detail-rainy { background: linear-gradient(135deg, #667eea 0%, #3b5bdb 100%); }
-.detail-cloudy { background: linear-gradient(135deg, #a8c0d6 0%, #6b8caa 100%); }
-.detail-snowy { background: linear-gradient(135deg, #85cdc9 0%, #5eb5bd 100%); }
-.detail-default { background: linear-gradient(135deg, #56ab2f 0%, #7fc94a 100%); }
+.detail-sunny {
+  background: linear-gradient(135deg, #ff9a56 0%, #e8532e 100%);
+}
+.detail-rainy {
+  background: linear-gradient(135deg, #667eea 0%, #3b5bdb 100%);
+}
+.detail-cloudy {
+  background: linear-gradient(135deg, #a8c0d6 0%, #6b8caa 100%);
+}
+.detail-snowy {
+  background: linear-gradient(135deg, #85cdc9 0%, #5eb5bd 100%);
+}
+.detail-default {
+  background: linear-gradient(135deg, #56ab2f 0%, #7fc94a 100%);
+}
 
 .weather-icon {
   display: block;
@@ -335,12 +344,23 @@ onMounted(async () => {
 }
 
 @media (max-width: 700px) {
-  .observation-grid { grid-template-columns: repeat(2, 1fr); }
+  .observation-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
-  .weather-hero { align-items: flex-start; flex-direction: column; }
-  .hero-summary { align-items: flex-start; text-align: left; }
-  .card-header { align-items: flex-start; flex-direction: column; }
+  .weather-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .hero-summary {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

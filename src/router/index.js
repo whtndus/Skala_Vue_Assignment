@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { weatherData } from '@/data/weatherData'
+
+const NotFoundView = () => import('@/views/NotFoundView.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,11 +27,32 @@ const router = createRouter({
       component: () => import('@/views/PracticeView.vue'),
     },
     {
-      path: '/:pathMatch(.*)*',
+      path: '/404',
       name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue'),
+      component: NotFoundView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'path-not-found',
+      component: NotFoundView,
     },
   ],
+})
+
+router.beforeEach((to) => {
+  if (to.name !== 'weather-detail') return true
+
+  const cityId = String(to.params.cityId || '')
+  const isMockCity = weatherData.some((city) => city.id === cityId)
+  const isLiveCity = /^owm_\d+$/.test(cityId) && typeof to.query.city === 'string' && Boolean(to.query.city.trim())
+
+  if (isMockCity || isLiveCity) return true
+
+  return {
+    name: 'not-found',
+    query: { from: to.fullPath },
+    replace: true,
+  }
 })
 
 export default router

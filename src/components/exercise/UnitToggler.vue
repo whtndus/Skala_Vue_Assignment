@@ -9,13 +9,7 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 <template>
   <div class="unit-toggler" aria-label="온도 단위 설정">
     <span class="unit-label">온도 단위</span>
-    <button
-      type="button"
-      class="unit-button"
-      :aria-label="`온도 단위를 ${unit === 'celsius' ? '화씨' : '섭씨'}로 변경`"
-      :title="`현재 단위: ${unitSymbol}`"
-      @click="configStore.toggleUnit"
-    >
+    <button type="button" class="unit-button" :aria-label="`온도 단위를 ${unit === 'celsius' ? '화씨' : '섭씨'}로 변경`" :title="`현재 단위: ${unitSymbol}`" @click="configStore.toggleUnit">
       <span :class="{ active: unit === 'celsius' }">°C</span>
       <span class="divider" aria-hidden="true">/</span>
       <span :class="{ active: unit === 'fahrenheit' }">°F</span>
@@ -48,7 +42,10 @@ const { unit, unitSymbol } = storeToRefs(configStore)
   color: #94a3b8;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .unit-button:hover {

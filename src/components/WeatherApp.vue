@@ -14,7 +14,7 @@ const weatherList = ref([
   { id: 'city_03', name: '부산', temp: 26, status: '구름' },
   { id: 'city_04', name: '대관령', temp: 18, status: '눈' },
   { id: 'city_05', name: '제주', temp: 27, status: '구름' },
-  { id: 'city_06', name: '부천', temp: 25, status: '맑음' }
+  { id: 'city_06', name: '부천', temp: 25, status: '맑음' },
 ])
 
 // ──────────────────────────────────────────────
@@ -63,9 +63,7 @@ const avgTemp = computed(() => {
 })
 
 // 가장 더운 도시
-const hottestCity = computed(() =>
-  [...weatherList.value].sort((a, b) => b.temp - a.temp)[0]
-)
+const hottestCity = computed(() => [...weatherList.value].sort((a, b) => b.temp - a.temp)[0])
 
 // ──────────────────────────────────────────────
 // 3. 이벤트 핸들링 — 카드 클릭 시 도시 선택
@@ -104,7 +102,7 @@ watchEffect(() => {
 // ──────────────────────────────────────────────
 // status 문자열을 이모지 아이콘으로 변환
 const getWeatherIcon = (status) => {
-  const iconMap = { '맑음': '☀️', '비': '🌧️', '구름': '☁️' }
+  const iconMap = { 맑음: '☀️', 비: '🌧️', 구름: '☁️' }
   return iconMap[status] || '🌤️'
 }
 
@@ -113,7 +111,7 @@ const getWeatherIcon = (status) => {
 // ──────────────────────────────────────────────
 // 동적 :class 바인딩과 함께 사용하여 카드마다 다른 색상 테마를 적용
 const getCardGradient = (status) => {
-  const gradientMap = { '맑음': 'card-sunny', '비': 'card-rainy', '구름': 'card-cloudy' }
+  const gradientMap = { 맑음: 'card-sunny', 비: 'card-rainy', 구름: 'card-cloudy' }
   return gradientMap[status] || 'card-default'
 }
 </script>
@@ -131,13 +129,7 @@ const getCardGradient = (status) => {
       <h2>🔍 도시 검색</h2>
       <div class="search-box">
         <!-- :value로 단방향 출력, @input으로 입력을 수동 캡처하여 IME 이슈 해결 -->
-        <input
-          type="text"
-          placeholder="검색할 도시 이름을 입력하세요"
-          :value="searchQuery"
-          @input="onInput"
-          class="search-input"
-        />
+        <input type="text" placeholder="검색할 도시 이름을 입력하세요" :value="searchQuery" @input="onInput" class="search-input" />
         <!-- [추가] 교안에는 검색어만 표시하지만, 여기서는 매칭 도시까지 안내 -->
         <p class="search-result" v-if="searchQuery.trim()">
           검색 중인 도시:
@@ -166,7 +158,9 @@ const getCardGradient = (status) => {
       </div>
       <div class="stat-card">
         <span class="stat-label">가장 더운 도시</span>
-        <span class="stat-value">{{ hottestCity.name }}<small> {{ hottestCity.temp }}°C</small></span>
+        <span class="stat-value"
+          >{{ hottestCity.name }}<small> {{ hottestCity.temp }}°C</small></span
+        >
       </div>
     </section>
 
@@ -179,13 +173,7 @@ const getCardGradient = (status) => {
         <!-- v-for: filteredWeatherList를 순회, :key에 weather.id 바인딩 -->
         <!-- @click: 카드 클릭 시 selectCity 함수 호출 → 상태바 업데이트 -->
         <!-- :class: 날씨 상태에 따라 동적으로 그라데이션 클래스 적용 -->
-        <div
-          v-for="weather in filteredWeatherList"
-          :key="weather.id"
-          class="weather-card"
-          :class="getCardGradient(weather.status)"
-          @click="selectCity(weather.name)"
-        >
+        <div v-for="weather in filteredWeatherList" :key="weather.id" class="weather-card" :class="getCardGradient(weather.status)" @click="selectCity(weather.name)">
           <!--날씨 아이콘 + 도시명 헤더-->
           <div class="card-header">
             <span class="weather-icon">{{ getWeatherIcon(weather.status) }}</span>
@@ -197,24 +185,15 @@ const getCardGradient = (status) => {
 
             <!-- 조건부 렌더링 (v-if / v-else)
                  기온 25도 기준으로 더움/선선함 라벨 분기 -->
-            <span class="label label-hot" v-if="weather.temp >= 25">
-              🔥 더움 (25도 이상)
-            </span>
-            <span class="label label-cool" v-else>
-              ❄️ 선선함 (25도 미만)
-            </span>
+            <span class="label label-hot" v-if="weather.temp >= 25"> 🔥 더움 (25도 이상) </span>
+            <span class="label label-cool" v-else> ❄️ 선선함 (25도 미만) </span>
           </div>
 
           <div class="card-footer">
             <!-- 이벤트 수식어 @click.stop
                  .stop 수식어로 event.stopPropagation() 자동 호출
                  → 버튼 클릭이 부모 카드의 @click까지 전파되지 않음 -->
-            <button
-              class="detail-btn"
-              @click.stop="showDetail(weather.name, weather.status)"
-            >
-              상세보기
-            </button>
+            <button class="detail-btn" @click.stop="showDetail(weather.name, weather.status)">상세보기</button>
           </div>
         </div>
       </div>
@@ -267,7 +246,9 @@ h2 {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1.25rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .search-box:focus-within {
@@ -342,8 +323,14 @@ h2 {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Weather Cards Grid */
@@ -361,7 +348,9 @@ h2 {
   border-radius: 14px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
@@ -482,7 +471,10 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s, transform 0.2s, border-color 0.25s;
+  transition:
+    background 0.25s,
+    transform 0.2s,
+    border-color 0.25s;
   backdrop-filter: blur(4px);
 }
 
@@ -514,7 +506,9 @@ h2 {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {

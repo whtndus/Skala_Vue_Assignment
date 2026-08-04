@@ -67,5 +67,4 @@ export const weatherData = [
   },
 ]
 
-export const findWeatherById = (cityId) =>
-  weatherData.find((city) => city.id === cityId)
+export const findWeatherById = (cityId) => weatherData.find((city) => city.id === cityId)

@@ -9,9 +9,7 @@ export const useWeatherStore = defineStore('weather', () => {
   const searchError = ref('')
   const lastUpdatedCity = ref(null)
 
-  const liveCityCount = computed(
-    () => weatherList.value.filter((city) => city.source === 'live').length,
-  )
+  const liveCityCount = computed(() => weatherList.value.filter((city) => city.source === 'live').length)
 
   const findWeatherById = (cityId) => weatherList.value.find((city) => city.id === cityId)
 
@@ -28,14 +26,8 @@ export const useWeatherStore = defineStore('weather', () => {
 
     try {
       const liveWeather = await fetchWeatherByCity(normalizedCityName)
-      const comparableNames = [normalizedCityName, liveWeather.name, liveWeather.officialName].map(
-        (name) => name.toLocaleLowerCase(),
-      )
-      const existingIndex = weatherList.value.findIndex(
-        (city) =>
-          city.openWeatherId === liveWeather.openWeatherId ||
-          comparableNames.includes(city.name.toLocaleLowerCase()),
-      )
+      const comparableNames = [normalizedCityName, liveWeather.name, liveWeather.officialName].map((name) => name.toLocaleLowerCase())
+      const existingIndex = weatherList.value.findIndex((city) => city.openWeatherId === liveWeather.openWeatherId || comparableNames.includes(city.name.toLocaleLowerCase()))
 
       if (existingIndex >= 0) {
         const existingCity = weatherList.value[existingIndex]

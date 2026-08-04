@@ -8,10 +8,12 @@
  */
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { ElSkeleton } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useWeatherSearch } from '@/composables/useWeatherSearch'
 import { useTemperature } from '@/composables/useTemperature'
 import { useWeatherStore } from '@/stores/weatherStore'
+import { useFavoritesStore } from '@/stores/favoritesStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
@@ -20,14 +22,16 @@ const router = useRouter()
 const route = useRoute()
 const { formatTemperature } = useTemperature()
 const weatherStore = useWeatherStore()
-const { weatherList, isSearching, searchError, lastUpdatedCity, liveCityCount } =
-  storeToRefs(weatherStore)
+const favoritesStore = useFavoritesStore()
+const { weatherList, isSearching, searchError, lastUpdatedCity, liveCityCount } = storeToRefs(weatherStore)
+const { favoriteCities, favoriteCount } = storeToRefs(favoritesStore)
+const { isFavorite, toggleFavorite } = favoritesStore
 
 // 2. 상태바 제어 반응형 데이터
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 
 // 3. 검색 상태와 파생 데이터는 Composable에서 관리
-const { searchQuery, filteredWeatherList } = useWeatherSearch(weatherList)
+const { searchQuery, debouncedSearchQuery, filteredWeatherList } = useWeatherSearch(weatherList)
 
 const statusOptions = ['전체', '맑음', '비', '구름', '눈']
 const sortOptions = ['default', 'temp-desc', 'temp-asc', 'name']
@@ -41,7 +45,7 @@ searchQuery.value = getQueryText(route.query.q)
 const selectedStatus = ref(getStatus(route.query.status))
 const selectedSort = ref(getSort(route.query.sort))
 
-watch([searchQuery, selectedStatus, selectedSort], ([newQuery, newStatus, newSort]) => {
+watch([debouncedSearchQuery, selectedStatus, selectedSort], ([newQuery, newStatus, newSort]) => {
   const nextQuery = { ...route.query }
   const normalizedQuery = newQuery.trim()
 
@@ -54,10 +58,7 @@ watch([searchQuery, selectedStatus, selectedSort], ([newQuery, newStatus, newSor
   if (newSort !== 'default') nextQuery.sort = newSort
   else delete nextQuery.sort
 
-  const hasSameQuery =
-    getQueryText(route.query.q) === (nextQuery.q || '') &&
-    getQueryText(route.query.status) === (nextQuery.status || '') &&
-    getQueryText(route.query.sort) === (nextQuery.sort || '')
+  const hasSameQuery = getQueryText(route.query.q) === (nextQuery.q || '') && getQueryText(route.query.status) === (nextQuery.status || '') && getQueryText(route.query.sort) === (nextQuery.sort || '')
 
   if (!hasSameQuery) router.replace({ name: 'weather-home', query: nextQuery })
 })
@@ -77,10 +78,7 @@ watch(
 )
 
 const displayedWeatherList = computed(() => {
-  const statusFiltered =
-    selectedStatus.value === '전체'
-      ? filteredWeatherList.value
-      : filteredWeatherList.value.filter((city) => city.status === selectedStatus.value)
+  const statusFiltered = selectedStatus.value === '전체' ? filteredWeatherList.value : filteredWeatherList.value.filter((city) => city.status === selectedStatus.value)
 
   const sortedList = [...statusFiltered]
 
@@ -118,6 +116,23 @@ const handleCitySearch = async (cityName) => {
 
   searchQuery.value = city.name
   selectedCityInfo.value = `${city.name}의 실시간 날씨를 불러왔습니다.`
+}
+
+const handleToggleFavorite = (city) => {
+  const wasAdded = toggleFavorite(city)
+  selectedCityInfo.value = wasAdded ? `${city.name}을(를) 즐겨찾기에 추가했습니다.` : `${city.name}을(를) 즐겨찾기에서 해제했습니다.`
+}
+
+const handleFavoriteSelection = async (city) => {
+  selectedStatus.value = '전체'
+
+  if (weatherStore.findWeatherById(city.id)) {
+    searchQuery.value = city.name
+    selectedCityInfo.value = `${city.name} 즐겨찾기를 선택했습니다.`
+    return
+  }
+
+  await handleCitySearch(city.name)
 }
 
 // 5. watch — 상태바 문구 업데이트 감시
@@ -169,6 +184,19 @@ const showDetail = (cityId) => {
       <span>{{ selectedCityInfo }}</span>
     </div>
 
+    <section v-if="favoriteCities.length" class="favorites-bar" aria-labelledby="favorites-title">
+      <div class="favorites-heading">
+        <span aria-hidden="true">★</span>
+        <strong id="favorites-title">즐겨찾기 도시</strong>
+        <small>{{ favoriteCount }}개</small>
+      </div>
+      <div class="favorite-chips">
+        <button v-for="city in favoriteCities" :key="city.id" type="button" @click="handleFavoriteSelection(city)">
+          {{ city.name }}
+        </button>
+      </div>
+    </section>
+
     <!-- 3) 통계 요약 섹션 -->
     <section class="stats-section">
       <div class="stat-card">
@@ -196,14 +224,7 @@ const showDetail = (cityId) => {
       <div class="list-controls">
         <fieldset class="status-filter">
           <legend>날씨 상태</legend>
-          <button
-            v-for="status in statusOptions"
-            :key="status"
-            type="button"
-            :class="{ active: selectedStatus === status }"
-            :aria-pressed="selectedStatus === status"
-            @click="selectedStatus = status"
-          >
+          <button v-for="status in statusOptions" :key="status" type="button" :class="{ active: selectedStatus === status }" :aria-pressed="selectedStatus === status" @click="selectedStatus = status">
             {{ status }} <small>{{ getStatusCount(status) }}</small>
           </button>
         </fieldset>
@@ -219,26 +240,28 @@ const showDetail = (cityId) => {
         </label>
       </div>
 
-      <div class="weather-grid">
+      <div v-if="isSearching" class="weather-skeleton-grid" aria-label="날씨 조회 중">
+        <el-skeleton v-for="index in 3" :key="index" class="weather-skeleton" :rows="4" animated />
+      </div>
+
+      <div v-else class="weather-grid">
         <WeatherCard
           v-for="item in displayedWeatherList"
           :key="item.id"
           :city-item="item"
+          :is-favorite="isFavorite(item.id)"
           @select-card="(msg) => (selectedCityInfo = msg)"
           @click-detail="showDetail"
+          @toggle-favorite="handleToggleFavorite"
         >
           <template #actions="{ city, requestDetail }">
-            <button class="custom-detail-btn" type="button" @click.stop="requestDetail">
-              {{ city.name }} 상세보기
-            </button>
+            <button class="custom-detail-btn" type="button" @click.stop="requestDetail">{{ city.name }} 상세보기</button>
           </template>
         </WeatherCard>
       </div>
 
       <!-- 검색 결과 없을 시 안내 -->
-      <p v-if="displayedWeatherList.length === 0" class="no-result">
-        😭 검색 결과와 일치하는 도시가 없습니다.
-      </p>
+      <p v-if="!isSearching && displayedWeatherList.length === 0" class="no-result">😭 검색 결과와 일치하는 도시가 없습니다.</p>
 
       <template #footer>
         <p class="dashboard-card-summary">현재 {{ resultCount }}개 도시를 표시하고 있습니다.</p>
@@ -290,6 +313,68 @@ const showDetail = (cityId) => {
   border: 1px solid #b8dff5;
 }
 
+.favorites-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #f4d98b;
+  border-radius: 10px;
+  background: #fffaf0;
+}
+
+.favorites-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #8a6414;
+}
+
+.favorites-heading strong {
+  font-weight: 700;
+}
+
+.favorites-heading small {
+  color: #a37c26;
+}
+
+.favorite-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.favorite-chips button {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #e8c967;
+  border-radius: 999px;
+  color: #795811;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.favorite-chips button:hover {
+  border-color: #c79b28;
+  background: #fff3cd;
+}
+
+.weather-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.weather-skeleton {
+  min-height: 190px;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border, #e9ecef);
+  border-radius: 14px;
+  background: var(--color-background, #fff);
+}
+
 .status-icon {
   font-size: 1.1rem;
 }
@@ -312,7 +397,9 @@ const showDetail = (cityId) => {
   border: 1px solid var(--color-border, #e9ecef);
   border-radius: 12px;
   text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .stat-card:hover {
@@ -375,7 +462,10 @@ const showDetail = (cityId) => {
   color: var(--color-text, #2c3e50);
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .status-filter button:hover,
@@ -436,7 +526,10 @@ const showDetail = (cityId) => {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s, transform 0.2s, border-color 0.25s;
+  transition:
+    background 0.25s,
+    transform 0.2s,
+    border-color 0.25s;
   backdrop-filter: blur(4px);
 }
 

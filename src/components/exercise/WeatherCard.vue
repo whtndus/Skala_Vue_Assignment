@@ -6,7 +6,7 @@ import { useTemperature } from '@/composables/useTemperature'
  * WeatherCard.vue — 개별 도시 날씨 카드 컴포넌트 (프리미엄 디자인 적용)
  *
  * 1. props: cityItem (도시 데이터 객체: { id, name, temp, status })
- * 2. emits: 
+ * 2. emits:
  *   - 'select-card': 카드 클릭 시 부모에게 도시 선택 메시지 전달
  *   - 'click-detail': [상세보기] 요청 시 도시 ID 전달
  * 3. actions Scoped Slot: 부모가 상세보기 영역을 커스터마이징할 수 있도록 city, requestDetail 제공
@@ -16,9 +16,13 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  isFavorite: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['select-card', 'click-detail'])
+const emit = defineEmits(['select-card', 'click-detail', 'toggle-favorite'])
 const { convertTemperature, unitSymbol } = useTemperature()
 
 const displayTemp = computed(() => convertTemperature(props.cityItem.temp))
@@ -29,23 +33,30 @@ const requestDetail = () => {
 
 // 날씨 상태별 이모지 아이콘 매핑
 const getWeatherIcon = (status) => {
-  const iconMap = { '맑음': '☀️', '비': '🌧️', '구름': '☁️', '눈': '❄️' }
+  const iconMap = { 맑음: '☀️', 비: '🌧️', 구름: '☁️', 눈: '❄️' }
   return iconMap[status] || '🌤️'
 }
 
 // 날씨 상태별 카드 배경 그라데이션 클래스 매핑
 const getCardGradient = (status) => {
-  const gradientMap = { '맑음': 'card-sunny', '비': 'card-rainy', '구름': 'card-cloudy', '눈': 'card-snowy' }
+  const gradientMap = { 맑음: 'card-sunny', 비: 'card-rainy', 구름: 'card-cloudy', 눈: 'card-snowy' }
   return gradientMap[status] || 'card-default'
 }
 </script>
 
 <template>
-  <div
-    class="weather-card"
-    :class="getCardGradient(cityItem.status)"
-    @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)"
-  >
+  <div class="weather-card" :class="getCardGradient(cityItem.status)" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
+    <button
+      type="button"
+      class="favorite-button"
+      :class="{ active: isFavorite }"
+      :aria-label="isFavorite ? `${cityItem.name} 즐겨찾기 해제` : `${cityItem.name} 즐겨찾기 추가`"
+      :aria-pressed="isFavorite"
+      @click.stop="emit('toggle-favorite', cityItem)"
+    >
+      {{ isFavorite ? '★' : '☆' }}
+    </button>
+
     <div class="card-header">
       <span class="weather-icon">{{ getWeatherIcon(cityItem.status) }}</span>
       <h4 class="city-name">{{ cityItem.name }} ({{ cityItem.status }})</h4>
@@ -63,9 +74,7 @@ const getCardGradient = (status) => {
     <div class="card-footer">
       <slot name="actions" :city="cityItem" :request-detail="requestDetail">
         <!-- 슬롯을 사용하지 않을 때 표시되는 기본 상세보기 버튼 -->
-        <button class="detail-btn" type="button" @click.stop="requestDetail">
-          상세보기
-        </button>
+        <button class="detail-btn" type="button" @click.stop="requestDetail">상세보기</button>
       </slot>
     </div>
   </div>
@@ -76,7 +85,9 @@ const getCardGradient = (status) => {
   border-radius: 14px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
@@ -101,6 +112,31 @@ const getCardGradient = (status) => {
 
 .weather-card:hover::before {
   opacity: 1;
+}
+
+.favorite-button {
+  position: absolute;
+  z-index: 2;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 50%;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 1.35rem;
+  line-height: 1;
+  backdrop-filter: blur(5px);
+}
+
+.favorite-button:hover:not(:disabled),
+.favorite-button.active {
+  color: #ffe082;
+  background: rgba(255, 255, 255, 0.32);
 }
 
 /* Card Gradient Variants */
@@ -140,6 +176,7 @@ const getCardGradient = (status) => {
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 1rem;
+  padding-right: 2.25rem;
 }
 
 .weather-icon {
@@ -211,7 +248,10 @@ const getCardGradient = (status) => {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s, transform 0.2s, border-color 0.25s;
+  transition:
+    background 0.25s,
+    transform 0.2s,
+    border-color 0.25s;
   backdrop-filter: blur(4px);
 }
 

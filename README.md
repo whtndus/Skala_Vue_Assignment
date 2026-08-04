@@ -20,16 +20,20 @@ Vue 3 Composition API와 Vue Router를 활용한 지역별 날씨 대시보드�
 - Composable로 공통화한 메인·상세 화면 온도 변환
 - 한국어·영어 도시 이름 검색을 통한 OpenWeather 실시간 날씨 조회
 - API 오류 시 기존 Mock Data를 유지하는 안전한 데이터 흐름
+- 오류 상태 뱃지·재시도 버튼과 Element Plus 로딩 스켈레톤
+- 300ms debounce를 적용한 검색 및 URL 쿼리 동기화
+- Pinia와 localStorage를 이용한 즐겨찾기 도시 저장
+- 존재하지 않는 도시 ID를 404로 전환하는 전역 라우터 가드
 
 ## 라우트
 
-| 경로 | 화면 | 설명 |
-|---|---|---|
-| `/` | `WeatherHomeView` | 메인 날씨 대시보드 |
-| `/weather/:cityId` | `WeatherDetailView` | 도시 ID 기반 상세 관측 정보 |
-| `/about` | `WeatherAboutView` | 서비스 및 Vue 학습 요소 소개 |
-| `/practice` | `PracticeView` | Vue 핵심 개념 및 Pinia 실습 |
-| `/:pathMatch(.*)*` | `NotFoundView` | 정의되지 않은 경로 안내 |
+| 경로               | 화면                | 설명                         |
+| ------------------ | ------------------- | ---------------------------- |
+| `/`                | `WeatherHomeView`   | 메인 날씨 대시보드           |
+| `/weather/:cityId` | `WeatherDetailView` | 도시 ID 기반 상세 관측 정보  |
+| `/about`           | `WeatherAboutView`  | 서비스 및 Vue 학습 요소 소개 |
+| `/practice`        | `PracticeView`      | Vue 핵심 개념 및 Pinia 실습  |
+| `/:pathMatch(.*)*` | `NotFoundView`      | 정의되지 않은 경로 안내      |
 
 도시 상세 경로 예시는 `/weather/city_01`입니다. 검색·필터·정렬 상태가 있으면 `/weather/city_03?q=부&status=구름&sort=temp-desc`처럼 상세 경로에도 함께 전달됩니다. 존재하지 않는 도시 ID에는 별도의 정보 없음 화면이 표시됩니다.
 
@@ -68,6 +72,7 @@ src/
 ├── stores/
 │   ├── configStore.js
 │   ├── counter.js
+│   ├── favoritesStore.js
 │   └── weatherStore.js
 └── views/
     ├── PracticeView.vue
@@ -118,6 +123,8 @@ VITE_WEATHER_API_KEY=YOUR_OPENWEATHER_API_KEY
 npm run build
 npm run preview
 ```
+
+배포된 서비스는 [weathervueassignment.vercel.app](https://weathervueassignment.vercel.app)에서 확인할 수 있습니다.
 
 ## 확인 항목
 

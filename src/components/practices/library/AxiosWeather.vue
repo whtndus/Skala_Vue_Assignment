@@ -1,12 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { ElSkeleton } from 'element-plus'
+import { getWeatherErrorMessage } from '@/services/openWeatherApi'
 
 const weatherData = ref(null)
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const handleFetchWeather = async () => {
   isLoading.value = true
+  errorMessage.value = ''
 
   const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
   const URL = `https://api.openweathermap.org/data/2.5/weather?lat=35.158582&lon=126.804975&appid=${API_KEY}&units=metric&lang=kr`
@@ -21,7 +25,7 @@ const handleFetchWeather = async () => {
   } catch (error) {
     // 4xx, 5xx 에러나 네트워크 오프라인 시 자동으로 이 catch 영역으로 튕겨 들어옵니다.
     console.error('통신 중 에러가 발생했습니다:', error)
-    alert('데이터를 가져오지 못했습니다. API 키 활성화 여부나 주소를 확인하세요.')
+    errorMessage.value = getWeatherErrorMessage(error)
   } finally {
     isLoading.value = false
   }
@@ -34,7 +38,14 @@ const handleFetchWeather = async () => {
     <button @click="handleFetchWeather" :disabled="isLoading">
       {{ isLoading ? '데이터 로딩 중...' : '실시간 날씨 데이터 당겨오기' }}
     </button>
-    <div v-if="weatherData" class="result-card">
+    <el-skeleton v-if="isLoading" class="weather-skeleton" :rows="4" animated />
+    <div v-else-if="errorMessage" class="error-card" role="alert">
+      <span class="error-badge">통신 실패</span>
+      <strong>OpenWeather 응답을 받지 못했습니다.</strong>
+      <p>{{ errorMessage }}</p>
+      <button type="button" @click="handleFetchWeather">다시 시도</button>
+    </div>
+    <div v-else-if="weatherData" class="result-card">
       <p>
         📍 위치: <strong>{{ weatherData.name }}</strong>
       </p>
@@ -64,5 +75,38 @@ const handleFetchWeather = async () => {
 }
 .result-card strong {
   color: #0284c7;
+}
+
+.weather-skeleton,
+.error-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.weather-skeleton {
+  border: 1px solid #e2e8f0;
+}
+
+.error-card {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.error-card p {
+  margin: 0;
+}
+
+.error-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc2626;
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 </style>

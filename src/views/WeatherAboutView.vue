@@ -145,6 +145,8 @@
 }
 
 @media (max-width: 700px) {
-  .feature-grid { grid-template-columns: 1fr; }
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

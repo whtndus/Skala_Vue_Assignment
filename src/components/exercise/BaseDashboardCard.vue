@@ -27,7 +27,9 @@
   margin-bottom: 1.25rem;
   border: 1px solid var(--color-border, #e9ecef);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .base-dashboard-card__header {
