@@ -5,7 +5,7 @@
  * 1. props: cityItem (도시 데이터 객체: { id, name, temp, status })
  * 2. emits: 
  *   - 'select-card': 카드 클릭 시 부모에게 도시 선택 메시지 전달
- *   - 'click-detail': [상세보기] 요청 시 도시 날씨 내용 전달
+ *   - 'click-detail': [상세보기] 요청 시 도시 ID 전달
  * 3. actions Scoped Slot: 부모가 상세보기 영역을 커스터마이징할 수 있도록 city, requestDetail 제공
  */
 const props = defineProps({
@@ -18,7 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['select-card', 'click-detail'])
 
 const requestDetail = () => {
-  emit('click-detail', props.cityItem.name, props.cityItem.status)
+  emit('click-detail', props.cityItem.id)
 }
 
 // 날씨 상태별 이모지 아이콘 매핑

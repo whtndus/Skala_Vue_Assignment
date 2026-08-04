@@ -1,26 +1,24 @@
 <script setup>
 /**
- * WeatherParent.vue — 날씨 대시보드 상위(부모) 컴포넌트
+ * WeatherHomeView.vue — / 경로의 날씨 대시보드 화면
  *
  * 1. 원본 날씨 데이터와 선택 상태, 대시보드 통계 관리
  * 2. 검색 로직은 useWeatherSearch Composable로 재사용
  * 3. BaseDashboardCard와 WeatherCard의 Named/Scoped Slot 커스터마이징
  */
 import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useWeatherSearch } from '@/composables/useWeatherSearch'
-import BaseDashboardCard from './BaseDashboardCard.vue'
-import SearchBar from './SearchBar.vue'
-import WeatherCard from './WeatherCard.vue'
+import { weatherData } from '@/data/weatherData'
+import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
+import SearchBar from '@/components/exercise/SearchBar.vue'
+import WeatherCard from '@/components/exercise/WeatherCard.vue'
+
+const router = useRouter()
+const route = useRoute()
 
 // 1. 가상 백엔드 날씨 데이터 배열
-const weatherList = ref([
-  { id: 'city_01', name: '서울', temp: 28, status: '맑음' },
-  { id: 'city_02', name: '수원', temp: 24, status: '비' },
-  { id: 'city_03', name: '부산', temp: 26, status: '구름' },
-  { id: 'city_04', name: '대관령', temp: 18, status: '눈' },
-  { id: 'city_05', name: '제주', temp: 27, status: '구름' },
-  { id: 'city_06', name: '부천', temp: 25, status: '맑음' },
-])
+const weatherList = ref(weatherData)
 
 // 2. 상태바 제어 반응형 데이터
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
@@ -28,6 +26,36 @@ const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 // 3. 검색 상태와 파생 데이터는 Composable에서 관리
 const { searchQuery, filteredWeatherList, matchedCities, resultCount } =
   useWeatherSearch(weatherList)
+
+// URL의 q 값을 검색어와 동기화하여 새로고침 후에도 검색 결과를 유지
+const getQueryText = (query) => (typeof query === 'string' ? query : '')
+
+searchQuery.value = getQueryText(route.query.q)
+
+watch(searchQuery, (newQuery) => {
+  const normalizedQuery = newQuery.trim()
+  const currentQuery = getQueryText(route.query.q)
+
+  if (normalizedQuery === currentQuery) return
+
+  const nextQuery = { ...route.query }
+
+  if (normalizedQuery) {
+    nextQuery.q = normalizedQuery
+  } else {
+    delete nextQuery.q
+  }
+
+  router.replace({ name: 'weather-home', query: nextQuery })
+})
+
+watch(
+  () => route.query.q,
+  (newQuery) => {
+    const queryText = getQueryText(newQuery)
+    if (queryText !== searchQuery.value) searchQuery.value = queryText
+  },
+)
 
 // 4. computed — 대시보드 통계 연산
 const avgTemp = computed(() => {
@@ -46,18 +74,14 @@ watch(selectedCityInfo, (newInfo) => {
   console.log(`[watch 감지] 상태 바 문구가 업데이트되었습니다 -> "${newInfo}"`)
 })
 
-// 6. 알림 대행 함수
-const showDetail = (cityName, status) => {
-  window.alert(`${cityName}의 현재 날씨는 [${status}] 상태입니다.`)
+// 6. 상세 페이지로 이동
+const showDetail = (cityId) => {
+  router.push({ name: 'weather-detail', params: { cityId } })
 }
 </script>
 
 <template>
   <div class="dashboard-wrapper">
-    <div class="app-header">
-      <h1>🌤️ 과제 3: 날씨 (컴포넌트)</h1>
-    </div>
-
     <!-- 1) 도시 검색 영역 (BaseDashboardCard 슬롯 주입) -->
     <BaseDashboardCard>
       <template #header>
@@ -132,17 +156,6 @@ const showDetail = (cityName, status) => {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 1rem;
-}
-
-.app-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.app-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-heading, #2c3e50);
 }
 
 .dashboard-card-title {

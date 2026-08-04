@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
  * SearchBar.vue — 도시 검색 전용 컴포넌트
  * 
  * 1. props: 
- *   - currentQuery: 부모(WeatherParent)로부터 수신하는 검색어
+ *   - currentQuery: 부모(WeatherHomeView)로부터 수신하는 검색어
  *   - matchedCities: 검색어에 매칭된 도시명 배열 (추가 정보 표시)
  * 2. emits: 입력 확정(change) 시 정리된 검색어를 'update-query' 이벤트로 부모에게 전달
  */
