@@ -6,6 +6,14 @@ import { findWeatherById } from '@/data/weatherData'
 const route = useRoute()
 
 const city = computed(() => findWeatherById(route.params.cityId))
+const homeRoute = computed(() => ({
+  name: 'weather-home',
+  query: {
+    ...(typeof route.query.q === 'string' ? { q: route.query.q } : {}),
+    ...(typeof route.query.status === 'string' ? { status: route.query.status } : {}),
+    ...(typeof route.query.sort === 'string' ? { sort: route.query.sort } : {}),
+  },
+}))
 
 const weatherIcon = computed(() => {
   const iconMap = { 맑음: '☀️', 비: '🌧️', 구름: '☁️', 눈: '❄️' }
@@ -70,14 +78,20 @@ const detailClass = computed(() => {
         </dl>
       </section>
 
-      <RouterLink class="back-link" to="/">← 메인 대시보드로 돌아가기</RouterLink>
+      <div class="navigation-actions">
+        <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
+        <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>
+      </div>
     </template>
 
     <section v-else class="empty-state">
       <span aria-hidden="true">🗺️</span>
       <h1>도시 정보를 찾을 수 없습니다</h1>
       <p><strong>{{ route.params.cityId }}</strong>에 해당하는 관측 정보가 없습니다.</p>
-      <RouterLink class="back-link" to="/">메인 대시보드로 돌아가기</RouterLink>
+      <div class="navigation-actions">
+        <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
+        <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>
+      </div>
     </section>
   </div>
 </template>
@@ -234,9 +248,20 @@ const detailClass = computed(() => {
   font-size: 0.72rem;
 }
 
+.navigation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.empty-state .navigation-actions {
+  justify-content: center;
+}
+
 .back-link {
   display: inline-flex;
   padding: 0.6rem 1rem;
+  border: 1px solid #4a90d9;
   border-radius: 8px;
   background: #4a90d9;
   color: #fff;
@@ -245,6 +270,15 @@ const detailClass = computed(() => {
 
 .back-link:hover {
   background: #347abd;
+}
+
+.back-link.secondary {
+  background: transparent;
+  color: #4a90d9;
+}
+
+.back-link.secondary:hover {
+  background: rgba(74, 144, 217, 0.12);
 }
 
 .empty-state {
