@@ -1,11 +1,25 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
-import { findWeatherById } from '@/data/weatherData'
+import { useTemperature } from '@/composables/useTemperature'
+import { useWeatherStore } from '@/stores/weatherStore'
 
 const route = useRoute()
+const { formatTemperature } = useTemperature()
+const weatherStore = useWeatherStore()
+const { isSearching, searchError } = storeToRefs(weatherStore)
 
-const city = computed(() => findWeatherById(route.params.cityId))
+const city = computed(() => weatherStore.findWeatherById(route.params.cityId))
+const dataSourceLabel = computed(() =>
+  city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : 'Mock Data 관측 정보',
+)
+const precipitationLabel = computed(() =>
+  city.value?.precipitationType === 'rainfall' ? '최근 1시간 강수량' : '강수 확률',
+)
+const precipitationUnit = computed(() =>
+  city.value?.precipitationType === 'rainfall' ? 'mm' : '%',
+)
 const homeRoute = computed(() => ({
   name: 'weather-home',
   query: {
@@ -29,6 +43,12 @@ const detailClass = computed(() => {
   }
   return classMap[city.value?.status] || 'detail-default'
 })
+
+onMounted(async () => {
+  if (!city.value && typeof route.query.city === 'string') {
+    await weatherStore.searchCityWeather(route.query.city)
+  }
+})
 </script>
 
 <template>
@@ -37,18 +57,20 @@ const detailClass = computed(() => {
       <div class="page-heading">
         <p class="eyebrow">지역별 상세 기상관측</p>
         <h1>{{ city.name }} 날씨</h1>
-        <p>{{ city.observedAt }} 기준 Mock Data 관측 정보입니다.</p>
+        <p>{{ city.observedAt }} 기준 {{ dataSourceLabel }}입니다.</p>
       </div>
 
       <section class="weather-hero" :class="detailClass">
         <div>
           <span class="weather-icon" aria-hidden="true">{{ weatherIcon }}</span>
-          <p class="weather-status">{{ city.status }}</p>
-          <h2>{{ city.temp }}°C</h2>
+          <p class="weather-status">
+            {{ city.status }}<template v-if="city.description"> · {{ city.description }}</template>
+          </p>
+          <h2>{{ formatTemperature(city.temp) }}</h2>
         </div>
         <div class="hero-summary">
           <span>{{ city.name }}</span>
-          <strong>체감 온도 {{ city.feelsLike }}°C</strong>
+          <strong>체감 온도 {{ formatTemperature(city.feelsLike) }}</strong>
         </div>
       </section>
 
@@ -68,12 +90,12 @@ const detailClass = computed(() => {
             <dd>{{ city.windSpeed }}<small>m/s</small></dd>
           </div>
           <div>
-            <dt>강수 확률</dt>
-            <dd>{{ city.precipitation }}<small>%</small></dd>
+            <dt>{{ precipitationLabel }}</dt>
+            <dd>{{ city.precipitation }}<small>{{ precipitationUnit }}</small></dd>
           </div>
           <div>
             <dt>체감 온도</dt>
-            <dd>{{ city.feelsLike }}<small>°C</small></dd>
+            <dd>{{ formatTemperature(city.feelsLike) }}</dd>
           </div>
         </dl>
       </section>
@@ -84,10 +106,17 @@ const detailClass = computed(() => {
       </div>
     </template>
 
+    <section v-else-if="isSearching" class="empty-state" aria-live="polite">
+      <span aria-hidden="true">⏳</span>
+      <h1>실시간 날씨를 불러오는 중입니다</h1>
+      <p>도시 관측 정보를 잠시만 기다려 주세요.</p>
+    </section>
+
     <section v-else class="empty-state">
       <span aria-hidden="true">🗺️</span>
       <h1>도시 정보를 찾을 수 없습니다</h1>
-      <p><strong>{{ route.params.cityId }}</strong>에 해당하는 관측 정보가 없습니다.</p>
+      <p v-if="searchError">{{ searchError }}</p>
+      <p v-else><strong>{{ route.params.cityId }}</strong>에 해당하는 관측 정보가 없습니다.</p>
       <div class="navigation-actions">
         <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
         <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>

@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue'
+import { useTemperature } from '@/composables/useTemperature'
+
 /**
  * WeatherCard.vue — 개별 도시 날씨 카드 컴포넌트 (프리미엄 디자인 적용)
  *
@@ -16,6 +19,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select-card', 'click-detail'])
+const { convertTemperature, unitSymbol } = useTemperature()
+
+const displayTemp = computed(() => convertTemperature(props.cityItem.temp))
 
 const requestDetail = () => {
   emit('click-detail', props.cityItem.id)
@@ -46,7 +52,7 @@ const getCardGradient = (status) => {
     </div>
 
     <div class="card-body">
-      <p class="temp">현재 기온: {{ cityItem.temp }}°C</p>
+      <p class="temp">현재 기온: {{ displayTemp }}{{ unitSymbol }}</p>
 
       <!-- 기온에 따라 더움 / 보통 / 선선함 3단계 라벨 표시 -->
       <span v-if="cityItem.temp >= 25" class="label label-hot">🔥 더움 (25도 이상)</span>

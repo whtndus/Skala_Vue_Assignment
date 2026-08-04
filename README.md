@@ -1,6 +1,6 @@
 # Vue 날씨 대시보드
 
-Vue 3 Composition API와 Vue Router를 활용한 지역별 날씨 대시보드입니다. 검색과 통계, 컴포넌트 통신 및 Slot 실습 구조를 유지하면서 페이지 라우팅과 도시별 상세 화면을 추가했습니다.
+Vue 3 Composition API와 Vue Router를 활용한 지역별 날씨 대시보드입니다. 기존 과제와 `skala-vue-practice` 실습 코드를 교안의 디렉터리 구조에 맞춰 하나의 프로젝트로 통합했습니다.
 
 ## 주요 기능
 
@@ -15,6 +15,11 @@ Vue 3 Composition API와 Vue Router를 활용한 지역별 날씨 대시보드�
 - 상세 기상관측 Mock Data 표시
 - 소개 페이지 및 정의되지 않은 경로의 404 처리
 - 모든 페이지 컴포넌트 Lazy Loading
+- Vue 반응형 상태, Lifecycle, Props/Emits, Slot, Pinia 실습 페이지
+- Pinia 전역 설정을 이용한 섭씨·화씨 단위 전환
+- Composable로 공통화한 메인·상세 화면 온도 변환
+- 한국어·영어 도시 이름 검색을 통한 OpenWeather 실시간 날씨 조회
+- API 오류 시 기존 Mock Data를 유지하는 안전한 데이터 흐름
 
 ## 라우트
 
@@ -23,6 +28,7 @@ Vue 3 Composition API와 Vue Router를 활용한 지역별 날씨 대시보드�
 | `/` | `WeatherHomeView` | 메인 날씨 대시보드 |
 | `/weather/:cityId` | `WeatherDetailView` | 도시 ID 기반 상세 관측 정보 |
 | `/about` | `WeatherAboutView` | 서비스 및 Vue 학습 요소 소개 |
+| `/practice` | `PracticeView` | Vue 핵심 개념 및 Pinia 실습 |
 | `/:pathMatch(.*)*` | `NotFoundView` | 정의되지 않은 경로 안내 |
 
 도시 상세 경로 예시는 `/weather/city_01`입니다. 검색·필터·정렬 상태가 있으면 `/weather/city_03?q=부&status=구름&sort=temp-desc`처럼 상세 경로에도 함께 전달됩니다. 존재하지 않는 도시 ID에는 별도의 정보 없음 화면이 표시됩니다.
@@ -37,18 +43,34 @@ src/
 │   └── index.js
 ├── assets/
 │   ├── base.css
-│   └── main.css
+│   ├── main.css
+│   └── practice.css
 ├── components/
 │   ├── exercise/
 │   │   ├── BaseDashboardCard.vue
 │   │   ├── SearchBar.vue
+│   │   ├── UnitToggler.vue
 │   │   └── WeatherCard.vue
+│   ├── practices/
+│   │   ├── basic/       # 디렉티브, 이벤트, 바인딩 실습
+│   │   ├── composition/ # ref, reactive 실습
+│   │   ├── component/   # Lifecycle, Props/Emits, Slot 실습
+│   │   └── library/     # Pinia Store 실습
+│   ├── icons/
 │   └── WeatherApp.vue
 ├── composables/
+│   ├── useTemperature.js
 │   └── useWeatherSearch.js
 ├── data/
 │   └── weatherData.js
+├── services/
+│   └── openWeatherApi.js
+├── stores/
+│   ├── configStore.js
+│   ├── counter.js
+│   └── weatherStore.js
 └── views/
+    ├── PracticeView.vue
     ├── WeatherHomeView.vue
     ├── WeatherDetailView.vue
     ├── WeatherAboutView.vue
@@ -61,8 +83,11 @@ src/
 
 ```text
 SearchBar
-  └─ update-query
-       ↓
+  ├─ update-query → 기존 카드 실시간 필터
+  └─ search-city → Geocoding API → 위도·경도 → OpenWeather API
+                         ↓
+                   weatherStore
+                         ↓
 WeatherHomeView ─ useWeatherSearch(weatherList)
   ├─ 검색 결과 및 통계 계산
   └─ WeatherCard
@@ -71,7 +96,7 @@ WeatherHomeView ─ useWeatherSearch(weatherList)
               ↓
         /weather/:cityId
               ↓
-       WeatherDetailView ─ weatherData에서 도시 조회
+       WeatherDetailView ─ weatherStore에서 도시 조회
 ```
 
 ## 실행 방법
@@ -79,6 +104,12 @@ WeatherHomeView ─ useWeatherSearch(weatherList)
 ```bash
 npm install
 npm run dev
+```
+
+OpenWeather API를 사용하려면 프로젝트 루트에 `.env`를 만들고 키를 설정합니다.
+
+```env
+VITE_WEATHER_API_KEY=YOUR_OPENWEATHER_API_KEY
 ```
 
 프로덕션 빌드는 다음 명령으로 검증합니다.
@@ -97,3 +128,5 @@ npm run preview
 5. `/about`에서 소개 내용과 홈 복귀 링크가 표시되는지 확인합니다.
 6. 존재하지 않는 경로에서 404 화면이 표시되는지 확인합니다.
 7. `npm run build` 실행 시 각 페이지가 별도 청크로 생성되는지 확인합니다.
+8. `/practice`에서 각 실습 예제와 Pinia 카운터가 정상 동작하는지 확인합니다.
+9. 상단 단위 버튼으로 메인 카드·통계·상세 화면의 온도가 함께 전환되는지 확인합니다.

@@ -1,12 +1,20 @@
+<script setup>
+import UnitToggler from '@/components/exercise/UnitToggler.vue'
+</script>
+
 <template>
   <div class="app-shell">
     <header class="site-header">
       <h1>🌤️ 지역별 날씨 대시보드</h1>
 
-      <nav class="navigation" aria-label="주요 메뉴">
-        <RouterLink to="/">날씨 대시보드</RouterLink>
-        <RouterLink to="/about">서비스 소개</RouterLink>
-      </nav>
+      <div class="header-controls">
+        <nav class="navigation" aria-label="주요 메뉴">
+          <RouterLink to="/">날씨 대시보드</RouterLink>
+          <RouterLink to="/practice">Vue 실습</RouterLink>
+          <RouterLink to="/about">서비스 소개</RouterLink>
+        </nav>
+        <UnitToggler />
+      </div>
     </header>
 
     <main class="main-content">
@@ -45,6 +53,14 @@
   gap: 0.4rem;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .navigation a {
   padding: 0.45rem 0.8rem;
   border-radius: 8px;
@@ -64,6 +80,10 @@
 }
 
 @media (max-width: 600px) {
+  .header-controls {
+    width: 100%;
+  }
+
   .navigation {
     width: 100%;
   }

@@ -18,10 +18,22 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
+  errorMessage: {
+    type: String,
+    default: '',
+  },
 })
 
-const emit = defineEmits(['update-query'])
+const emit = defineEmits(['update-query', 'search-city'])
 const inputMode = ref('realtime')
+
+const submitSearch = () => {
+  emit('search-city', props.currentQuery.trim())
+}
 
 // props는 직접 수정할 수 없으므로 writable computed를 통해 부모 상태와 동기화
 const queryModel = computed({
@@ -44,28 +56,39 @@ const queryModel = computed({
       </label>
     </fieldset>
 
-    <input
-      v-if="inputMode === 'realtime'"
-      type="text"
-      placeholder="검색할 도시 이름을 입력하세요"
-      :value="currentQuery"
-      class="search-input"
-      @input="$emit('update-query', $event.target.value)"
-    />
-    <input
-      v-else
-      v-model.trim.lazy="queryModel"
-      type="text"
-      placeholder="입력 후 포커스를 해제하세요"
-      class="search-input"
-    />
+    <form class="search-form" @submit.prevent="submitSearch">
+      <input
+        v-if="inputMode === 'realtime'"
+        type="search"
+        placeholder="도시 이름을 입력하세요 (예: 서울, London)"
+        :value="currentQuery"
+        class="search-input"
+        aria-label="날씨를 검색할 도시"
+        @input="$emit('update-query', $event.target.value)"
+      />
+      <input
+        v-else
+        v-model.trim.lazy="queryModel"
+        type="search"
+        placeholder="도시 이름 입력 후 Enter"
+        class="search-input"
+        aria-label="날씨를 검색할 도시"
+      />
+      <button
+        type="submit"
+        class="search-button"
+        :disabled="isLoading || !currentQuery.trim()"
+      >
+        {{ isLoading ? '조회 중...' : '실시간 날씨 조회' }}
+      </button>
+    </form>
 
     <p class="mode-description">
       <template v-if="inputMode === 'realtime'">
-        입력할 때마다 부모의 검색어와 카드 목록이 갱신됩니다.
+        입력 중에는 현재 목록을 필터링하고, Enter 또는 조회 버튼으로 API를 호출합니다.
       </template>
       <template v-else>
-        change 이벤트가 발생할 때 앞뒤 공백을 제거한 검색어가 반영됩니다.
+        change 이벤트로 검색어를 반영한 뒤 Enter 또는 조회 버튼으로 API를 호출합니다.
       </template>
     </p>
 
@@ -78,6 +101,8 @@ const queryModel = computed({
       <strong v-if="matchedCities.length">{{ matchedCities.join(', ') }}</strong>
       <span v-else class="no-result">일치하는 도시가 없습니다.</span>
     </p>
+
+    <p v-if="errorMessage" class="api-error" role="alert">{{ errorMessage }}</p>
   </div>
 </template>
 
@@ -108,6 +133,7 @@ const queryModel = computed({
 }
 
 .search-input {
+  flex: 1 1 260px;
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--color-border, #dee2e6);
@@ -117,6 +143,35 @@ const queryModel = computed({
   color: var(--color-text, #2c3e50);
   outline: none;
   transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.search-form {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.search-button {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  background: #4a90d9;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.search-button:hover:not(:disabled) {
+  background: #347abd;
+}
+
+.search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .search-input:focus {
@@ -157,5 +212,15 @@ const queryModel = computed({
 .no-result {
   color: #e74c3c;
   font-style: italic;
+}
+
+.api-error {
+  margin: 0.75rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
 }
 </style>

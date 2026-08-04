@@ -7,18 +7,21 @@
  * 3. BaseDashboardCard와 WeatherCard의 Named/Scoped Slot 커스터마이징
  */
 import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useWeatherSearch } from '@/composables/useWeatherSearch'
-import { weatherData } from '@/data/weatherData'
+import { useTemperature } from '@/composables/useTemperature'
+import { useWeatherStore } from '@/stores/weatherStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
 
 const router = useRouter()
 const route = useRoute()
-
-// 1. 가상 백엔드 날씨 데이터 배열
-const weatherList = ref(weatherData)
+const { formatTemperature } = useTemperature()
+const weatherStore = useWeatherStore()
+const { weatherList, isSearching, searchError, lastUpdatedCity, liveCityCount } =
+  storeToRefs(weatherStore)
 
 // 2. 상태바 제어 반응형 데이터
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
@@ -107,6 +110,16 @@ const hottestCity = computed(() => {
   return [...weatherList.value].sort((a, b) => b.temp - a.temp)[0]
 })
 
+const handleCitySearch = async (cityName) => {
+  selectedStatus.value = '전체'
+  const city = await weatherStore.searchCityWeather(cityName)
+
+  if (!city) return
+
+  searchQuery.value = city.name
+  selectedCityInfo.value = `${city.name}의 실시간 날씨를 불러왔습니다.`
+}
+
 // 5. watch — 상태바 문구 업데이트 감시
 watch(selectedCityInfo, (newInfo) => {
   console.log(`[watch 감지] 상태 바 문구가 업데이트되었습니다 -> "${newInfo}"`)
@@ -114,10 +127,15 @@ watch(selectedCityInfo, (newInfo) => {
 
 // 6. 상세 페이지로 이동
 const showDetail = (cityId) => {
+  const selectedCity = weatherStore.findWeatherById(cityId)
+
   router.push({
     name: 'weather-detail',
     params: { cityId },
-    query: { ...route.query },
+    query: {
+      ...route.query,
+      ...(selectedCity?.source === 'live' ? { city: selectedCity.name } : {}),
+    },
   })
 }
 </script>
@@ -133,9 +151,17 @@ const showDetail = (cityId) => {
       <SearchBar
         :current-query="searchQuery"
         :matched-cities="matchedCities"
+        :is-loading="isSearching"
+        :error-message="searchError"
         @update-query="(val) => (searchQuery = val)"
+        @search-city="handleCitySearch"
       />
     </BaseDashboardCard>
+
+    <p v-if="lastUpdatedCity" class="live-update" role="status">
+      <span aria-hidden="true">🛰️</span>
+      {{ lastUpdatedCity.name }} 실시간 관측 반영 · 현재 API 연동 도시 {{ liveCityCount }}개
+    </p>
 
     <!-- 2) 선택 도시 상태바 -->
     <div class="status-bar">
@@ -151,11 +177,13 @@ const showDetail = (cityId) => {
       </div>
       <div class="stat-card">
         <span class="stat-label">전체 평균 기온</span>
-        <span class="stat-value">{{ avgTemp }}<small>°C</small></span>
+        <span class="stat-value">{{ formatTemperature(avgTemp) }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-label">가장 더운 도시</span>
-        <span class="stat-value">{{ hottestCity.name }}<small> {{ hottestCity.temp }}°C</small></span>
+        <span class="stat-value">
+          {{ hottestCity.name }}<small> {{ formatTemperature(hottestCity.temp) }}</small>
+        </span>
       </div>
     </section>
 
@@ -231,6 +259,20 @@ const showDetail = (cityId) => {
   font-weight: 600;
   margin: 0;
   color: var(--color-heading, #2c3e50);
+}
+
+.live-update {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: -0.25rem 0 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #b7ebd2;
+  border-radius: 9px;
+  background: #effcf5;
+  color: #227a50;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 /* Status Bar */
