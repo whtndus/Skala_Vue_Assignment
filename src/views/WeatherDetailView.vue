@@ -1,608 +1,490 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTemperature } from '@/composables/useTemperature'
+import { formatCityTime } from '@/services/openWeatherApi'
 import { useWeatherStore } from '@/stores/weatherStore'
+import WeatherMap from '@/components/exercise/WeatherMap.vue'
 import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
 import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
 import cloudCityImage from '@/assets/weather-atlas/cloud-city.jpg'
 import snowCityImage from '@/assets/weather-atlas/snow-city.jpg'
 
 const route = useRoute()
-const { formatTemperature } = useTemperature()
+const router = useRouter()
 const weatherStore = useWeatherStore()
 const { isSearching, searchError } = storeToRefs(weatherStore)
-
-const city = computed(() => weatherStore.findWeatherById(route.params.cityId))
-const dataSourceLabel = computed(() => (city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : '샘플 관측 데이터'))
-const precipitationLabel = computed(() => (city.value?.precipitationType === 'rainfall' ? '최근 1시간 강수량' : '강수 확률'))
-const precipitationUnit = computed(() => (city.value?.precipitationType === 'rainfall' ? 'mm' : '%'))
+const { formatTemperature } = useTemperature()
+const queryCityName = computed(() => (typeof route.query.city === 'string' ? route.query.city.trim() : ''))
+const city = computed(() => weatherStore.findWeatherById(String(route.params.cityId)) || null)
 const homeRoute = computed(() => ({
   name: 'weather-home',
   query: {
     ...(typeof route.query.q === 'string' ? { q: route.query.q } : {}),
     ...(typeof route.query.status === 'string' ? { status: route.query.status } : {}),
     ...(typeof route.query.sort === 'string' ? { sort: route.query.sort } : {}),
+    ...(route.query.favorite === '1' ? { favorite: '1' } : {}),
   },
 }))
 
-const weatherIcon = computed(() => {
-  const iconMap = { 맑음: '☀️', 비: '🌧️', 구름: '☁️', 눈: '❄️' }
-  return iconMap[city.value?.status] || '🌤️'
+const detailImage = computed(() => ({ 맑음: clearCityImage, 비: rainCityImage, 구름: cloudCityImage, 눈: snowCityImage })[city.value?.status] || cloudCityImage)
+const detailHeadline = computed(
+  () => ({ 맑음: 'CLEAR ABOVE THE CITY', 비: 'RAIN AFTER MIDNIGHT', 구름: 'CLOUDS OVER THE WATER', 눈: 'WHITE AIR, HIGH GROUND' })[city.value?.status] || 'WEATHER ACROSS THE CITY',
+)
+const visibility = computed(() => (city.value?.visibilityMeters == null ? null : `${Number(city.value.visibilityMeters / 1000).toFixed(city.value.visibilityMeters % 1000 ? 1 : 0)} km`))
+const timezoneLabel = computed(() => {
+  if (city.value?.timezoneOffset == null) return null
+  const offset = Number(city.value.timezoneOffset)
+  const sign = offset >= 0 ? '+' : '-'
+  const hours = String(Math.floor(Math.abs(offset) / 3600)).padStart(2, '0')
+  const minutes = String(Math.floor((Math.abs(offset) % 3600) / 60)).padStart(2, '0')
+  return `UTC${sign}${hours}:${minutes}`
 })
+const observedTime = computed(() => formatCityTime(city.value?.observedTimestamp, city.value?.timezoneOffset, { year: 'numeric', month: 'long', day: 'numeric' }))
+const valueOrNull = (value, unit = '') => (value == null ? null : `${value}${unit}`)
+const observationRows = computed(() =>
+  [
+    ['국가', city.value?.country || null],
+    ['주·행정구역', city.value?.state || null],
+    ['현재 기온', city.value?.temp == null ? null : formatTemperature(city.value.temp)],
+    ['체감 온도', city.value?.feelsLike == null ? null : formatTemperature(city.value.feelsLike)],
+    ['최저 기온', city.value?.tempMin == null ? null : formatTemperature(city.value.tempMin)],
+    ['최고 기온', city.value?.tempMax == null ? null : formatTemperature(city.value.tempMax)],
+    ['습도', valueOrNull(city.value?.humidity, '%')],
+    ['구름량', valueOrNull(city.value?.cloudiness, '%')],
+    ['가시거리', visibility.value],
+  ].filter(([, value]) => value !== null),
+)
+const atmosphereRows = computed(() =>
+  [
+    ['대기압', valueOrNull(city.value?.pressure, ' hPa')],
+    ['해수면 기압', valueOrNull(city.value?.seaLevelPressure, ' hPa')],
+    ['지면 기압', valueOrNull(city.value?.groundLevelPressure, ' hPa')],
+    ['풍속', valueOrNull(city.value?.windSpeed, ' m/s')],
+    ['풍향', city.value?.windDirection ? `${city.value.windDirection} / ${city.value.windDegrees}°` : valueOrNull(city.value?.windDegrees, '°')],
+    ['돌풍', valueOrNull(city.value?.windGust, ' m/s')],
+    [city.value?.precipitationType === 'snow' ? '최근 1시간 적설량' : '최근 1시간 강수량', valueOrNull(city.value?.precipitation, ' mm')],
+  ].filter(([, value]) => value !== null),
+)
+const solarRows = computed(() =>
+  [
+    ['일출', city.value?.sunriseAt || null],
+    ['일몰', city.value?.sunsetAt || null],
+    ['관측 시간', observedTime.value || city.value?.observedAt || null],
+    ['시간대', timezoneLabel.value],
+  ].filter(([, value]) => value !== null),
+)
 
-const detailClass = computed(() => {
-  const classMap = {
-    맑음: 'detail-sunny',
-    비: 'detail-rainy',
-    구름: 'detail-cloudy',
-    눈: 'detail-snowy',
-  }
-  return classMap[city.value?.status] || 'detail-default'
-})
+let detailRequestId = 0
+const isResolvingRoute = ref(false)
+const observationElement = ref(null)
+let lastFocusedRoute = ''
 
-const detailImage = computed(() => {
-  const imageMap = { 맑음: clearCityImage, 비: rainCityImage, 구름: cloudCityImage, 눈: snowCityImage }
-  return imageMap[city.value?.status] || cloudCityImage
-})
+watch(
+  () => [String(route.params.cityId || ''), queryCityName.value],
+  async ([routeCityId, cityName]) => {
+    const requestId = ++detailRequestId
+    const cityById = weatherStore.findWeatherById(routeCityId)
+    if (cityById || !cityName) {
+      isResolvingRoute.value = false
+      return
+    }
 
-const detailHeadline = computed(() => {
-  const headlineMap = {
-    맑음: 'CLEAR ABOVE THE CITY',
-    비: 'RAIN AFTER MIDNIGHT',
-    구름: 'CLOUDS OVER THE WATER',
-    눈: 'WHITE AIR, HIGH GROUND',
-  }
-  return headlineMap[city.value?.status] || 'WEATHER ACROSS THE CITY'
-})
+    isResolvingRoute.value = true
+    const resolvedCity = await weatherStore.searchCityWeather(cityName)
+    if (requestId !== detailRequestId) return
+    isResolvingRoute.value = false
 
-onMounted(async () => {
-  if (!city.value && typeof route.query.city === 'string') {
-    await weatherStore.searchCityWeather(route.query.city)
-  }
-})
+    if (resolvedCity?.id === routeCityId) return
+
+    await router.replace({
+      name: 'not-found',
+      query: { from: route.fullPath },
+    })
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [route.fullPath, city.value?.id],
+  async ([routeKey, cityId]) => {
+    if (!cityId || lastFocusedRoute === routeKey) return
+
+    lastFocusedRoute = routeKey
+    await nextTick()
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    observationElement.value?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  },
+  { immediate: true, flush: 'post' },
+)
 </script>
 
 <template>
-  <div class="detail-page">
+  <main class="detail-page">
     <template v-if="city">
-      <section class="weather-hero" :class="detailClass" :style="{ backgroundImage: `url(${detailImage})` }">
+      <section class="detail-hero" :style="{ backgroundImage: `url(${detailImage})` }" aria-labelledby="detail-city-name">
         <div class="detail-shade" aria-hidden="true"></div>
-        <div class="page-heading">
-          <p class="eyebrow">{{ detailHeadline }}</p>
-          <h1>{{ city.name }}</h1>
-          <p>{{ city.observedAt }} / {{ dataSourceLabel }}</p>
+        <div class="detail-grain" aria-hidden="true"></div>
+        <div class="detail-meta">
+          <span>WEATHER / ATLAS</span><span>{{ city.country || 'COUNTRY UNKNOWN' }}</span
+          ><span>OPENWEATHER / LIVE</span>
         </div>
+        <div class="detail-copy">
+          <p>{{ detailHeadline }}</p>
+          <h1 id="detail-city-name">{{ city.name }}</h1>
+          <span
+            >{{ city.status }}<template v-if="city.description"> / {{ city.description }}</template></span
+          >
+        </div>
+        <strong class="detail-temperature">{{ formatTemperature(city.temp) }}</strong>
+        <p class="current-feel"><span>CURRENT FEEL</span>체감 온도 {{ formatTemperature(city.feelsLike) }}</p>
+      </section>
 
-        <div class="detail-temperature" :data-icon="weatherIcon">
-          <p class="weather-status">
-            {{ city.status }}<template v-if="city.description"> / {{ city.description }}</template>
-          </p>
-          <h2>{{ formatTemperature(city.temp) }}</h2>
-        </div>
-        <div class="hero-summary">
-          <span>CURRENT FEEL</span>
-          <strong>체감 온도 {{ formatTemperature(city.feelsLike) }}</strong>
+      <section id="observation" ref="observationElement" class="observation-section" aria-labelledby="observation-title">
+        <header>
+          <div>
+            <p>DETAILED OBSERVATION</p>
+            <h2 id="observation-title">현재 관측 정보</h2>
+          </div>
+          <span>{{ city.observedAt || '시간 정보 없음' }} · OpenWeather</span>
+        </header>
+        <div class="observation-grid">
+          <article class="observation-panel">
+            <h3><span>01</span>현재 상태</h3>
+            <dl class="data-table">
+              <div v-for="[label, value] in observationRows" :key="label">
+                <dt>{{ label }}</dt>
+                <dd>{{ value }}</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="observation-panel">
+            <h3><span>02</span>바람과 대기</h3>
+            <dl class="data-table">
+              <div v-for="[label, value] in atmosphereRows" :key="label">
+                <dt>{{ label }}</dt>
+                <dd>{{ value }}</dd>
+              </div>
+              <div v-if="!atmosphereRows.length">
+                <dt>관측 정보</dt>
+                <dd>정보 없음</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="observation-panel">
+            <h3><span>03</span>일출·일몰과 시간</h3>
+            <dl class="data-table">
+              <div v-for="[label, value] in solarRows" :key="label">
+                <dt>{{ label }}</dt>
+                <dd>{{ value }}</dd>
+              </div>
+            </dl>
+          </article>
         </div>
       </section>
 
-      <section class="observation-card" aria-labelledby="observation-title">
-        <div class="card-header">
-          <h2 id="observation-title">상세 관측 정보</h2>
-          <span>{{ city.observedAt }} 업데이트</span>
-        </div>
+      <WeatherMap :latitude="city.coordinates?.lat" :longitude="city.coordinates?.lon" :city-name="city.name" />
 
-        <dl class="observation-grid">
-          <div>
-            <dt>습도</dt>
-            <dd>{{ city.humidity }}<small>%</small></dd>
-          </div>
-          <div>
-            <dt>풍속</dt>
-            <dd>{{ city.windSpeed }}<small>m/s</small></dd>
-          </div>
-          <div>
-            <dt>{{ precipitationLabel }}</dt>
-            <dd>
-              {{ city.precipitation }}<small>{{ precipitationUnit }}</small>
-            </dd>
-          </div>
-          <div>
-            <dt>체감 온도</dt>
-            <dd>{{ formatTemperature(city.feelsLike) }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <div class="navigation-actions">
-        <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
-        <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>
-      </div>
+      <nav class="detail-navigation" aria-label="상세 페이지 이동">
+        <RouterLink :to="homeRoute">← 도시 아카이브로 돌아가기</RouterLink><RouterLink :to="{ ...homeRoute, hash: '#forecast' }">향후 예보 보기 ↗</RouterLink>
+      </nav>
     </template>
 
-    <section v-else-if="isSearching" class="empty-state" aria-live="polite">
-      <span aria-hidden="true">WAIT</span>
-      <h1>실시간 날씨를 불러오는 중입니다</h1>
-      <p>도시 관측 정보를 잠시만 기다려 주세요.</p>
+    <section v-else class="detail-empty" aria-live="polite">
+      <p>{{ isSearching || isResolvingRoute ? 'LOADING LIVE OBSERVATION' : 'OBSERVATION NOT FOUND' }}</p>
+      <h1>{{ isSearching || isResolvingRoute ? '실시간 날씨를 불러오는 중입니다' : '도시 정보를 찾을 수 없습니다' }}</h1>
+      <span>{{ isSearching || isResolvingRoute ? '잠시만 기다려 주세요.' : searchError || '검색 경로와 API 환경변수를 확인해 주세요.' }}</span
+      ><RouterLink :to="homeRoute">← 도시 아카이브로 돌아가기</RouterLink>
     </section>
-
-    <section v-else class="empty-state">
-      <span aria-hidden="true">404</span>
-      <h1>도시 정보를 찾을 수 없습니다</h1>
-      <p v-if="searchError">{{ searchError }}</p>
-      <p v-else>
-        <strong>{{ route.params.cityId }}</strong
-        >에 해당하는 관측 정보가 없습니다.
-      </p>
-      <div class="navigation-actions">
-        <RouterLink class="back-link secondary" :to="homeRoute">← 이전 목록으로 돌아가기</RouterLink>
-        <RouterLink class="back-link" to="/">메인으로 돌아가기</RouterLink>
-      </div>
-    </section>
-  </div>
+  </main>
 </template>
 
 <style scoped>
 .detail-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  min-width: 0;
+  background: var(--atlas-paper);
+  color: var(--atlas-ink);
 }
-
-.page-heading {
-  margin-bottom: 1.25rem;
-  text-align: center;
-}
-
-.page-heading h1 {
-  margin: 0.2rem 0;
-  color: var(--color-heading, #2c3e50);
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.page-heading p:not(.eyebrow) {
-  color: #777;
-  font-size: 0.9rem;
-}
-
-.eyebrow {
-  color: #4a90d9;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.weather-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding: 2rem;
-  overflow: hidden;
-  border-radius: 0;
-  color: #fff;
-  box-shadow: none;
-}
-
-.detail-sunny {
-  background: #2d312d;
-}
-.detail-rainy {
-  background: #1f292e;
-}
-.detail-cloudy {
-  background: #4a5252;
-}
-.detail-snowy {
-  background: #c8cecc;
-}
-.detail-default {
-  background: #333834;
-}
-
-.weather-icon {
-  display: block;
-  font-size: 3.5rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
-}
-
-.weather-status {
-  margin-top: 0.5rem;
-  font-weight: 600;
-}
-
-.weather-hero h2 {
-  margin: 0;
-  font-size: 3.4rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.hero-summary {
-  display: flex;
-  align-items: flex-end;
-  flex-direction: column;
-  gap: 0.2rem;
-  text-align: right;
-}
-
-.hero-summary span {
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.hero-summary strong {
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-.observation-card {
-  margin-bottom: 1.25rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 0;
-  background: var(--color-background-soft, #f8f9fa);
-  box-shadow: none;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-border, #e9ecef);
-}
-
-.card-header h2 {
-  margin: 0;
-  color: var(--color-heading, #2c3e50);
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.card-header span {
-  color: #888;
-  font-size: 0.78rem;
-}
-
-.observation-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin: 0;
-}
-
-.observation-grid div {
-  padding: 1rem 0.75rem;
-  border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 0;
-  background: var(--color-background, #fff);
-  text-align: center;
-}
-
-.observation-grid dt {
-  margin-bottom: 0.45rem;
-  color: #777;
-  font-size: 0.8rem;
-}
-
-.observation-grid dd {
-  margin: 0;
-  color: #4a90d9;
-  font-size: 1.35rem;
-  font-weight: 700;
-}
-
-.observation-grid small {
-  margin-left: 2px;
-  color: #888;
-  font-size: 0.75rem;
-}
-
-.navigation-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-}
-
-.empty-state .navigation-actions {
-  justify-content: center;
-}
-
-.back-link {
-  display: inline-flex;
-  padding: 0.6rem 1rem;
-  border: 1px solid #4a90d9;
-  border-radius: 0;
-  background: #4a90d9;
-  color: #fff;
-  font-weight: 600;
-}
-
-.back-link:hover {
-  background: #347abd;
-}
-
-.back-link.secondary {
-  background: transparent;
-  color: #4a90d9;
-}
-
-.back-link.secondary:hover {
-  background: rgba(74, 144, 217, 0.12);
-}
-
-.empty-state {
-  padding: 4rem 1.5rem;
-  border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 0;
-  background: var(--color-background-soft, #f8f9fa);
-  text-align: center;
-}
-
-.empty-state > span {
-  font-size: 3.5rem;
-}
-
-.empty-state h1 {
-  margin: 0.75rem 0 0.25rem;
-  color: var(--color-heading, #2c3e50);
-  font-size: 1.7rem;
-  font-weight: 700;
-}
-
-.empty-state p {
-  margin-bottom: 1.25rem;
-  color: #777;
-}
-
-@media (max-width: 700px) {
-  .observation-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .weather-hero {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .hero-summary {
-    align-items: flex-start;
-    text-align: left;
-  }
-  .card-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-/* Cinematic atlas detail */
-.detail-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0 0 6rem;
-  color: #252925;
-}
-
-.weather-hero {
+.detail-hero {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  min-height: 680px;
-  height: 78svh;
-  margin: 0 0 clamp(4rem, 8vw, 8rem);
-  padding: clamp(6rem, 10vw, 9rem) max(3vw, calc((100vw - 1280px) / 2)) 4vw;
+  min-height: 520px;
+  height: 64svh;
   overflow: hidden;
-  border-radius: 0;
   color: #f2efe7;
-  background-color: #222825;
   background-position: center;
   background-size: cover;
-  box-shadow: none;
-  isolation: isolate;
 }
-
-.detail-sunny,
-.detail-rainy,
-.detail-cloudy,
-.detail-snowy,
-.detail-default {
-  background-color: #222825;
-}
-
-.detail-shade {
+.detail-shade,
+.detail-grain {
   position: absolute;
-  z-index: -1;
   inset: 0;
-  background: rgba(12, 16, 15, 0.42);
 }
-
-.page-heading {
+.detail-shade {
+  background: linear-gradient(90deg, rgba(14, 17, 16, 0.76), rgba(14, 17, 16, 0.25) 65%, rgba(14, 17, 16, 0.55));
+}
+.detail-grain {
+  opacity: 0.1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.detail-meta {
   position: absolute;
-  top: clamp(6.5rem, 12vw, 10rem);
-  left: max(3vw, calc((100vw - 1280px) / 2));
-  margin: 0;
-  text-align: left;
-}
-
-.page-heading h1 {
-  margin: 0.6rem 0;
-  color: inherit;
-  font-size: clamp(4rem, 9vw, 8rem);
-  font-weight: 650;
-  letter-spacing: -0.075em;
-  line-height: 0.92;
-}
-
-.page-heading p:not(.eyebrow),
-.eyebrow {
-  color: inherit;
-  font-size: clamp(0.75rem, 0.8vw, 0.82rem);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.detail-temperature {
-  align-self: end;
-}
-
-.weather-icon {
-  display: none;
-}
-
-.weather-status {
-  margin: 0 0 0.8rem;
-  font-size: clamp(0.75rem, 0.85vw, 0.82rem);
-  font-weight: 700;
+  z-index: 1;
+  top: clamp(5.8rem, 8vw, 7rem);
+  right: 5vw;
+  left: 5vw;
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(242, 239, 231, 0.35);
+  font-size: 0.65rem;
+  font-weight: 750;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
-
-.weather-hero h2 {
-  margin: 0 0 0 -0.025em;
-  color: inherit;
-  font-size: clamp(7rem, min(18vw, 24svh), 16rem);
-  font-weight: 250;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.09em;
-  line-height: 0.92;
+.detail-copy {
+  position: absolute;
+  z-index: 1;
+  top: clamp(9rem, 17vh, 11rem);
+  left: 5vw;
 }
-
-.hero-summary {
-  align-items: flex-end;
-  align-self: end;
-  padding-bottom: 0.5rem;
-  text-align: right;
+.detail-copy p {
+  margin: 0 0 0.8rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
 }
-
-.hero-summary span {
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
-}
-
-.hero-summary strong {
-  font-size: 1rem;
-}
-
-.observation-card,
-.navigation-actions {
-  width: min(100% - 3rem, 1280px);
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.observation-card {
-  margin-bottom: 2.5rem;
-  padding: 0;
-  border: 0;
-  border-top: 1px solid #262a27;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.card-header {
+.detail-copy h1 {
   margin: 0;
-  padding: 1rem 0 2rem;
-  border-bottom: 1px solid #aaa8a1;
+  font-size: clamp(3.5rem, 7vw, 7rem);
+  font-weight: 590;
+  letter-spacing: -0.075em;
+  line-height: 0.78;
 }
-
-.card-header h2 {
-  color: #222623;
-  font-size: clamp(1.5rem, 3vw, 2.7rem);
-  font-weight: 550;
-  letter-spacing: -0.045em;
-}
-
-.observation-grid {
+.detail-copy span {
   display: block;
-}
-
-.observation-grid div {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  padding: 1.15rem 0;
-  border: 0;
-  border-bottom: 1px solid #aaa8a1;
-  border-radius: 0;
-  background: transparent;
-  text-align: left;
-}
-
-.observation-grid dt {
-  margin: 0;
-  color: #5e625e;
-  font-size: 0.85rem;
+  margin-top: 1.3rem;
+  font-size: 0.84rem;
   font-weight: 700;
+}
+.detail-temperature {
+  position: absolute;
+  z-index: 1;
+  right: 4vw;
+  bottom: 3rem;
+  font-size: clamp(5.5rem, 14vw, 13rem);
+  font-weight: 240;
+  letter-spacing: -0.035em;
+  line-height: 0.7;
+}
+.current-feel {
+  position: absolute;
+  z-index: 1;
+  bottom: 2rem;
+  left: 5vw;
+  margin: 0;
+  font-weight: 650;
+}
+.current-feel span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: rgba(242, 239, 231, 0.6);
+  font-size: 0.62rem;
+  letter-spacing: 0.13em;
+}
+.observation-section {
+  padding: clamp(3rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
+  border-bottom: 1px solid var(--atlas-line);
+  scroll-margin-top: 5.5rem;
+}
+.observation-section header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--atlas-line-strong);
+}
+.observation-section header p {
+  margin: 0 0 0.4rem;
+  color: var(--atlas-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+.observation-section h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.4vw, 3.8rem);
+  font-weight: 570;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+.observation-section header > span {
+  color: var(--atlas-muted);
+  font-size: 0.73rem;
+}
+.observation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 3rem);
+  padding-top: 2rem;
+}
+.observation-panel {
+  min-width: 0;
+  border-top: 1px solid var(--atlas-line-strong);
+}
+.observation-panel h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--atlas-line);
+  font-size: 1rem;
+  font-weight: 650;
+}
+.observation-panel h3 span {
+  color: var(--atlas-accent);
+  font-size: 0.95rem;
+  font-weight: 800;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
-
-.observation-grid dd {
-  color: #222623;
-  font-size: clamp(1.2rem, 2.5vw, 2rem);
-  font-weight: 450;
+.data-table {
+  min-width: 0;
+  margin: 0;
 }
-
-.back-link {
-  border-radius: 0;
-  color: #f0eee7;
-  background: #252a27;
+.data-table div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.58rem 0;
+  border-bottom: 1px solid var(--atlas-line);
 }
-
-.back-link.secondary {
-  border-color: #474d49;
-  color: #303632;
-  background: transparent;
+.data-table dt {
+  color: var(--atlas-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
-
-.empty-state {
-  width: min(100% - 3rem, 900px);
-  margin: 4rem auto;
-  border-radius: 0;
-  box-shadow: none;
+.data-table dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-
-@media (max-width: 640px) {
-  .weather-hero {
-    grid-template-columns: 1fr;
-    min-height: 680px;
-    padding: 7rem 1rem 1rem;
+.detail-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 3rem 5vw 6rem;
+}
+.detail-navigation a,
+.detail-empty a {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid currentColor;
+  color: var(--atlas-ink);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.detail-navigation a:focus-visible,
+.detail-empty a:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 4px;
+}
+.detail-empty {
+  min-height: 80svh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  padding: 8rem 5vw;
+}
+.detail-empty p {
+  color: var(--atlas-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+.detail-empty h1 {
+  max-width: 900px;
+  margin: 0.5rem 0;
+  font-size: clamp(3rem, 8vw, 8rem);
+  font-weight: 580;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+}
+.detail-empty span {
+  margin: 1rem 0 2rem;
+  color: var(--atlas-muted);
+}
+@media (max-width: 980px) {
+  .observation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .page-heading {
-    top: 8rem;
+  .observation-panel:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 700px) {
+  .detail-hero {
+    height: 66svh;
+    min-height: 520px;
+  }
+  .detail-meta {
+    top: 5.8rem;
+    right: 1rem;
     left: 1rem;
   }
-
-  .page-heading h1 {
-    font-size: clamp(3.6rem, 20vw, 5.6rem);
+  .detail-meta span:nth-child(2) {
+    display: none;
   }
-
-  .weather-hero h2 {
-    font-size: clamp(6.5rem, min(32vw, 20svh), 9rem);
+  .detail-copy {
+    top: 8.5rem;
+    left: 1rem;
   }
-
-  .hero-summary {
+  .detail-copy h1 {
+    font-size: clamp(3rem, 15vw, 4.8rem);
+  }
+  .detail-temperature {
+    right: 1rem;
+    bottom: 3.5rem;
+    font-size: clamp(5rem, 28vw, 7.5rem);
+  }
+  .current-feel {
+    bottom: 1.2rem;
+    left: 1rem;
+  }
+  .observation-section {
+    padding: 2.75rem 1rem;
+  }
+  .observation-section header {
     align-items: flex-start;
-    padding-bottom: 1rem;
-    text-align: left;
+    flex-direction: column;
   }
-
-  .observation-card,
-  .navigation-actions {
-    width: calc(100% - 2rem);
+  .observation-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+  }
+  .observation-panel:last-child {
+    grid-column: auto;
+  }
+  .detail-navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 2.5rem 1rem 5rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
   }
 }
 </style>

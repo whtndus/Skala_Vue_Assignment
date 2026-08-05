@@ -27,6 +27,7 @@ const route = useRoute()
 <style scoped>
 .app-shell {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 .site-header {

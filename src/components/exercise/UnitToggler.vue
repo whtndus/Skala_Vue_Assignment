@@ -25,7 +25,7 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 }
 
 .unit-label {
-  color: #718096;
+  color: var(--atlas-muted);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -36,10 +36,10 @@ const { unit, unitSymbol } = storeToRefs(configStore)
   gap: 0.3rem;
   min-height: 36px;
   padding: 0.35rem 0.65rem;
-  border: 1px solid #cbd5e0;
+  border: 1px solid var(--atlas-line);
   border-radius: 0;
-  background: #fff;
-  color: #94a3b8;
+  background: transparent;
+  color: var(--atlas-muted);
   cursor: pointer;
   box-shadow: none;
   transition:
@@ -49,13 +49,13 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 }
 
 .unit-button:hover {
-  border-color: #4a90d9;
+  border-color: currentColor;
   box-shadow: none;
   transform: translateY(-1px);
 }
 
 .unit-button:focus-visible {
-  outline: 3px solid rgba(74, 144, 217, 0.25);
+  outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 
@@ -65,11 +65,11 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 }
 
 .unit-button .active {
-  color: #1a6fa8;
+  color: var(--atlas-ink);
   font-weight: 800;
 }
 
 .unit-button .divider {
-  color: #cbd5e0;
+  color: var(--atlas-line);
 }
 </style>

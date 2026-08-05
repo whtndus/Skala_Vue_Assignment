@@ -22,6 +22,7 @@ import EventModifier from '@/components/practices/basic/EventModifier.vue'
 import ModelBasic from '@/components/practices/basic/ModelBasic.vue'
 import ModelForm from '@/components/practices/basic/ModelForm.vue'
 import ModelModifier from '@/components/practices/basic/ModelModifier.vue'
+import SearchBindingPractice from '@/components/practices/basic/SearchBindingPractice.vue'
 import StyleScoped from '@/components/practices/basic/StyleScoped.vue'
 import ReactiveRef from '@/components/practices/composition/ReactiveRef.vue'
 import ReactiveReactive from '@/components/practices/composition/ReactiveReactive.vue'
@@ -36,6 +37,7 @@ import PropsEmitsParent from '@/components/practices/component/PropsEmitsParent.
 import SlotDefaultParent from '@/components/practices/component/SlotDefaultParent.vue'
 import SlotNamedParent from '@/components/practices/component/SlotNamedParent.vue'
 import SlotScopedParent from '@/components/practices/component/SlotScopedParent.vue'
+import EcmaScript from '@/components/practices/library/EcmaScript.vue'
 import StoreCounter from '@/components/practices/library/StoreCounter.vue'
 import AxiosWeather from '@/components/practices/library/AxiosWeather.vue'
 import AxiosJson from '@/components/practices/library/AxiosJson.vue'
@@ -44,6 +46,7 @@ import ElementPlusPractice from '@/components/practices/library/ElementPlus.vue'
 const practiceSections = [
   {
     id: 'learning-environment',
+    kicker: 'SETUP / REACTIVITY',
     title: '학습환경 구성',
     description: '일반 JavaScript 값과 Vue 반응성 데이터, 텍스트 보간법의 차이를 확인합니다.',
     lessons: [
@@ -53,6 +56,7 @@ const practiceSections = [
   },
   {
     id: 'vue-directive',
+    kicker: 'DIRECTIVES',
     title: 'Vue 디렉티브',
     description: 'Vue 템플릿에서 DOM 출력과 속성, 조건, 반복 렌더링을 제어합니다.',
     lessons: [
@@ -74,6 +78,7 @@ const practiceSections = [
   },
   {
     id: 'event-handling',
+    kicker: 'EVENTS',
     title: 'Vue 이벤트 처리',
     description: 'v-on을 이용한 이벤트 처리와 이벤트 객체, 수식어 사용법을 실습합니다.',
     lessons: [
@@ -84,22 +89,26 @@ const practiceSections = [
   },
   {
     id: 'form-handling',
+    kicker: 'FORM BINDING',
     title: 'Vue 폼 처리',
     description: 'v-model 양방향 바인딩과 HTML 폼 요소별 데이터 연결 방식을 확인합니다.',
     lessons: [
       { label: 'v-model 양방향 데이터 바인딩', component: ModelBasic },
       { label: 'HTML Form 요소와 v-model', component: ModelForm },
       { label: 'v-model Modifiers', component: ModelModifier },
+      { label: '검색어 입력과 부모·자식 동기화', component: SearchBindingPractice },
     ],
   },
   {
     id: 'vue-style',
+    kicker: 'SCOPED STYLING',
     title: 'Vue 스타일',
     description: 'Scoped CSS와 외부 스타일을 활용해 컴포넌트 스타일의 적용 범위를 확인합니다.',
     lessons: [{ label: 'Vue Style Example', component: StyleScoped }],
   },
   {
     id: 'reactive-state',
+    kicker: 'REACTIVITY',
     title: '반응형 상태',
     description: 'ref와 reactive로 선언한 상태가 화면과 어떻게 연결되는지 확인합니다.',
     lessons: [
@@ -109,6 +118,7 @@ const practiceSections = [
   },
   {
     id: 'computed-watchers',
+    kicker: 'COMPUTED / WATCH',
     title: 'Computed와 Watchers',
     description: '파생 상태를 캐싱하고 반응형 데이터의 변화를 다양한 방식으로 감시합니다.',
     lessons: [
@@ -122,18 +132,21 @@ const practiceSections = [
   },
   {
     id: 'component-lifecycle',
+    kicker: 'LIFECYCLE',
     title: '컴포넌트 생명주기',
     description: '컴포넌트가 생성되고 갱신되며 사라지는 생명주기를 관찰합니다.',
     lessons: [{ label: 'Lifecycle Hook Example', component: LifecycleParent }],
   },
   {
     id: 'props-emits',
+    kicker: 'PROPS / EMITS',
     title: 'Props와 Emits',
     description: '부모와 자식 컴포넌트가 데이터와 이벤트를 주고받는 흐름을 실습합니다.',
     lessons: [{ label: 'Props & Emits Example', component: PropsEmitsParent }],
   },
   {
     id: 'component-slot',
+    kicker: 'SLOTS',
     title: '컴포넌트 슬롯',
     description: '기본·이름·범위 슬롯을 사용해 재사용 가능한 UI를 구성합니다.',
     lessons: [
@@ -144,12 +157,14 @@ const practiceSections = [
   },
   {
     id: 'pinia-store',
+    kicker: 'PINIA',
     title: 'Pinia 스토어',
     description: '컴포넌트 밖의 전역 상태를 만들고 여러 화면에서 공유합니다.',
     lessons: [{ label: 'Pinia Counter Store', component: StoreCounter }],
   },
   {
     id: 'axios',
+    kicker: 'AXIOS',
     title: 'Axios 데이터 연동',
     description: '외부 API와 JSON 데이터를 비동기로 요청하고 화면 상태에 반영합니다.',
     lessons: [
@@ -159,16 +174,23 @@ const practiceSections = [
   },
   {
     id: 'element-plus',
+    kicker: 'ELEMENT PLUS',
     title: 'Element Plus 실습',
     description: 'Element Plus의 폼, 데이터 입력, 피드백 컴포넌트를 반응형 상태와 연결해 실습합니다.',
     lessons: [{ label: 'Element Plus UI Components', component: ElementPlusPractice }],
+  },
+  {
+    id: 'ecmascript',
+    kicker: 'ECMASCRIPT / ES6+',
+    title: 'Modern JavaScript',
+    description: '배열·객체 가공, 안전한 기본값 처리, async/await 연쇄 호출을 세 가지 과제로 검증합니다.',
+    lessons: [{ label: 'ES6+ 실무 검증 과제 1·2·3', component: EcmaScript }],
   },
 ]
 
 const selectedSectionId = ref(practiceSections[0].id)
 const selectedSectionIndex = computed(() => practiceSections.findIndex((section) => section.id === selectedSectionId.value))
 const selectedSection = computed(() => practiceSections[selectedSectionIndex.value])
-const progress = computed(() => Math.round(((selectedSectionIndex.value + 1) / practiceSections.length) * 100))
 
 const selectSection = (sectionId) => {
   selectedSectionId.value = sectionId
@@ -185,53 +207,68 @@ const moveSection = (direction) => {
   <div class="practice-container">
     <header class="practice-heading">
       <div>
-        <p>SKALA VUE PRACTICE</p>
+        <p>VUE / FIELD NOTES</p>
         <h1>Vue 핵심 개념 실습</h1>
-        <span>왼쪽 커리큘럼을 따라 반응형 상태부터 API 연동까지 순서대로 실습합니다.</span>
+        <span>반응형 상태부터 API 연동까지 기록한 개발 실험 노트입니다.</span>
       </div>
       <div class="heading-progress" aria-label="전체 실습 수">
-        <strong>{{ practiceSections.length }}</strong>
-        <span>STEPS</span>
+        <strong>02</strong>
+        <span>VOL.</span>
       </div>
     </header>
 
     <div class="practice-layout">
-      <aside class="practice-sidebar">
-        <div class="sidebar-heading">
-          <span>CURRICULUM</span>
-          <strong>실습 순서</strong>
-        </div>
+      <div class="practice-aside">
+        <aside class="practice-sidebar">
+          <div class="sidebar-heading">
+            <span>CURRICULUM</span>
+            <strong>실습 순서</strong>
+          </div>
 
-        <nav class="practice-navigation" aria-label="Vue 실습 순서">
-          <button
-            v-for="(section, index) in practiceSections"
-            :key="section.id"
-            type="button"
-            class="practice-navigation-item"
-            :class="{ active: selectedSectionId === section.id }"
-            :aria-current="selectedSectionId === section.id ? 'step' : undefined"
-            @click="selectSection(section.id)"
-          >
-            <span class="navigation-number">{{ String(index + 1).padStart(2, '0') }}</span>
-            <span class="navigation-copy">
-              <strong>{{ section.title }}</strong>
-              <small>{{ section.lessons.length }}개 실습</small>
-            </span>
-          </button>
-        </nav>
-      </aside>
+          <nav class="practice-navigation" aria-label="Vue 실습 순서">
+            <button
+              v-for="(section, index) in practiceSections"
+              :key="section.id"
+              type="button"
+              class="practice-navigation-item"
+              :class="{ active: selectedSectionId === section.id }"
+              :aria-current="selectedSectionId === section.id ? 'step' : undefined"
+              @click="selectSection(section.id)"
+            >
+              <span class="navigation-number">{{ String(index + 1).padStart(2, '0') }}</span>
+              <span class="navigation-copy">
+                <strong>{{ section.title }}</strong>
+                <small>{{ section.lessons.length }}개 실습</small>
+              </span>
+            </button>
+          </nav>
+        </aside>
+
+        <aside class="practice-context" aria-label="현재 실습 정보">
+          <div class="context-card lesson-list">
+            <span class="context-eyebrow">IN THIS STEP</span>
+            <h3>{{ selectedSection.title }}</h3>
+            <ul>
+              <li v-for="lesson in selectedSection.lessons" :key="lesson.label">
+                {{ lesson.label }}
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
 
       <main class="practice-content">
         <section v-for="(section, index) in practiceSections" v-show="selectedSectionId === section.id" :key="section.id" class="practice-chapter" :aria-labelledby="`${section.id}-title`">
           <header class="chapter-heading">
-            <p>STEP {{ String(index + 1).padStart(2, '0') }}</p>
+            <p>{{ String(index + 1).padStart(2, '0') }} / {{ section.kicker }}</p>
             <h2 :id="`${section.id}-title`">{{ section.title }}</h2>
             <span>{{ section.description }}</span>
           </header>
 
           <div v-for="lesson in section.lessons" :key="lesson.label" class="lesson-block">
             <div class="lesson-label">{{ lesson.label }}</div>
-            <component :is="lesson.component" />
+            <div class="specimen-label">LIVE SPECIMEN</div>
+            <div class="specimen-surface"><component :is="lesson.component" /></div>
           </div>
         </section>
 
@@ -241,27 +278,6 @@ const moveSection = (direction) => {
           <button type="button" class="chapter-button primary" :disabled="selectedSectionIndex === practiceSections.length - 1" @click="moveSection(1)">다음 실습 →</button>
         </footer>
       </main>
-
-      <aside class="practice-context" aria-label="현재 실습 정보">
-        <div class="context-card">
-          <span class="context-eyebrow">LEARNING PROGRESS</span>
-          <strong>{{ progress }}%</strong>
-          <div class="progress-track" aria-hidden="true">
-            <span :style="{ width: `${progress}%` }"></span>
-          </div>
-          <p>{{ selectedSectionIndex + 1 }}단계까지 살펴보고 있어요.</p>
-        </div>
-
-        <div class="context-card lesson-list">
-          <span class="context-eyebrow">IN THIS STEP</span>
-          <h3>{{ selectedSection.title }}</h3>
-          <ul>
-            <li v-for="lesson in selectedSection.lessons" :key="lesson.label">
-              {{ lesson.label }}
-            </li>
-          </ul>
-        </div>
-      </aside>
     </div>
   </div>
 </template>
@@ -730,8 +746,31 @@ const moveSection = (direction) => {
 }
 
 .practice-layout {
-  grid-template-columns: 230px minmax(0, 1fr) 210px;
+  grid-template-columns: 310px minmax(0, 1fr);
   gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+.practice-aside {
+  position: sticky;
+  top: 6.25rem;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 13rem;
+  align-self: start;
+  gap: 1.5rem;
+  min-width: 0;
+  max-height: calc(100svh - 7.25rem);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.practice-content {
+  grid-column: 2;
+}
+
+.practice-context {
+  position: static;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .practice-sidebar,
@@ -750,32 +789,41 @@ const moveSection = (direction) => {
 }
 
 .practice-sidebar {
-  overflow: visible;
+  position: static;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar-heading {
-  padding: 1rem 0;
+  padding: 1.25rem 0;
   border-bottom-color: var(--atlas-line);
 }
 
 .sidebar-heading span,
 .context-eyebrow {
   color: var(--atlas-accent);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .sidebar-heading strong {
   color: var(--atlas-ink);
+  font-size: 1.1rem;
 }
 
 .practice-navigation {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0;
+  scrollbar-width: thin;
 }
 
 .practice-navigation-item {
-  gap: 0.8rem;
-  min-height: 58px;
-  padding: 0.7rem 0;
+  gap: 1rem;
+  min-height: 64px;
+  padding: 0.8rem 0;
   border: 0;
   border-bottom: 1px solid var(--atlas-line);
   border-radius: 0;
@@ -794,9 +842,9 @@ const moveSection = (direction) => {
 }
 
 .navigation-number {
-  flex-basis: 38px;
-  width: 38px;
-  height: 34px;
+  flex-basis: 44px;
+  width: 44px;
+  height: 38px;
   border-right: 1px solid var(--atlas-line);
   border-radius: 0;
   color: var(--atlas-accent);
@@ -810,7 +858,7 @@ const moveSection = (direction) => {
 }
 
 .navigation-copy strong {
-  font-size: 0.86rem;
+  font-size: 0.94rem;
 }
 
 .navigation-copy small {
@@ -857,6 +905,31 @@ const moveSection = (direction) => {
   background: transparent;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
+}
+
+.specimen-label {
+  padding: 0.45rem 0.7rem;
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.specimen-surface {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  border-right: 1px solid var(--atlas-line);
+  border-bottom: 1px solid var(--atlas-line);
+  border-left: 1px solid var(--atlas-line);
+  background: var(--atlas-paper-soft);
+  overflow-wrap: anywhere;
+}
+
+.specimen-surface :deep(code),
+.specimen-surface :deep(pre),
+.specimen-surface :deep(output) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 .lesson-block :deep(.el-card) {
@@ -921,6 +994,22 @@ const moveSection = (direction) => {
   padding: 1rem 0;
 }
 
+.context-card.lesson-list {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.context-card.lesson-list ul {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+}
+
 .context-card > strong {
   color: var(--atlas-ink);
   font-size: 2.3rem;
@@ -963,14 +1052,33 @@ const moveSection = (direction) => {
 }
 
 @media (max-width: 1080px) {
+  .practice-aside {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
   .practice-layout {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .practice-content {
+    grid-column: 2;
+  }
+
+  .practice-context {
+    display: none;
   }
 }
 
 @media (max-width: 760px) {
   .practice-container {
     padding: 2.5rem 0 5rem;
+  }
+
+  .practice-aside {
+    position: static;
+    display: block;
+    max-height: none;
+    overflow: visible;
   }
 
   .practice-heading {
@@ -982,11 +1090,20 @@ const moveSection = (direction) => {
   }
 
   .practice-sidebar {
+    display: block;
     margin-bottom: 2rem;
     border-radius: 0;
+    overflow: visible;
+  }
+
+  .practice-content {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .practice-navigation {
+    min-height: auto;
+    overflow-y: hidden;
     gap: 0;
     padding: 0;
     border-bottom: 1px solid var(--atlas-line-strong);
