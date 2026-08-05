@@ -17,6 +17,7 @@ import { useWeatherStore } from '@/stores/weatherStore'
 import { useFavoritesStore } from '@/stores/favoritesStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
+import UnitToggler from '@/components/exercise/UnitToggler.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
 import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
 import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
@@ -413,7 +414,10 @@ const showDetail = (cityId) => {
     <!-- 1) 도시 검색 영역 (BaseDashboardCard 슬롯 주입) -->
     <BaseDashboardCard>
       <template #header>
-        <h3 class="dashboard-card-title">도시 검색</h3>
+        <div class="search-section-heading">
+          <h3 class="dashboard-card-title">도시 검색</h3>
+          <UnitToggler />
+        </div>
       </template>
 
       <SearchBar
@@ -909,7 +913,7 @@ const showDetail = (cityId) => {
   justify-content: space-between;
   padding-top: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.38);
-  font-size: clamp(0.7rem, 0.75vw, 0.78rem);
+  font-size: clamp(0.75rem, 0.75vw, 0.8rem);
   font-weight: 750;
   letter-spacing: 0.14em;
 }
@@ -970,14 +974,15 @@ const showDetail = (cityId) => {
 
 .atlas-temperature {
   position: absolute;
-  bottom: max(8rem, 2.5vh);
-  left: -0.025em;
+  bottom: clamp(1.5rem, 4svh, 3rem);
+  left: 0;
+  max-width: 100%;
   color: inherit;
-  font-size: clamp(9rem, 20vw, 18rem);
+  font-size: clamp(7rem, min(17vw, 26svh), 17rem);
   font-weight: 300;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.11em;
-  line-height: 0.8;
+  letter-spacing: -0.09em;
+  line-height: 0.92;
   white-space: nowrap;
 }
 
@@ -1000,7 +1005,7 @@ const showDetail = (cityId) => {
 }
 
 .atlas-metrics dt {
-  font-size: clamp(0.68rem, 0.7vw, 0.76rem);
+  font-size: clamp(0.75rem, 0.7vw, 0.8rem);
   font-weight: 700;
   letter-spacing: 0.15em;
 }
@@ -1037,7 +1042,7 @@ const showDetail = (cityId) => {
 }
 
 .atlas-navigation span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -1045,7 +1050,7 @@ const showDetail = (cityId) => {
 .atlas-city-rail {
   position: absolute;
   right: 0;
-  bottom: 38%;
+  bottom: clamp(5.75rem, 12svh, 8rem);
   display: flex;
   gap: 0.9rem;
   max-width: 46vw;
@@ -1055,7 +1060,7 @@ const showDetail = (cityId) => {
 .atlas-city-rail button {
   padding: 0.3rem 0;
   border-bottom: 1px solid transparent;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   opacity: 0.55;
@@ -1127,7 +1132,7 @@ const showDetail = (cityId) => {
 .atlas-timeline header p,
 .atlas-timeline header > span {
   color: #8d9691;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
@@ -1209,14 +1214,14 @@ const showDetail = (cityId) => {
 
 .timeline-labels small {
   color: #858d89;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.1em;
 }
 
 .timeline-labels em {
   overflow: hidden;
   color: #9db4b3;
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-style: normal;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1267,6 +1272,32 @@ const showDetail = (cityId) => {
   font-size: clamp(1.5rem, 3vw, 2.7rem);
   font-weight: 550;
   letter-spacing: -0.045em;
+}
+
+.search-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.search-section-heading :deep(.unit-label) {
+  color: #656a66;
+  font-size: 0.75rem;
+}
+
+.search-section-heading :deep(.unit-button) {
+  border-color: #8d918c;
+  color: #7b817d;
+  background: transparent;
+}
+
+.search-section-heading :deep(.unit-button:hover) {
+  border-color: #536d7a;
+}
+
+.search-section-heading :deep(.unit-button .active) {
+  color: #405d6b;
 }
 
 .live-update,
@@ -1403,7 +1434,7 @@ const showDetail = (cityId) => {
 
 .city-index-caption span {
   margin-bottom: 0.75rem;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
@@ -1445,7 +1476,7 @@ const showDetail = (cityId) => {
   border-radius: 0;
   color: inherit;
   background: transparent;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   backdrop-filter: none;
@@ -1495,7 +1526,7 @@ const showDetail = (cityId) => {
 
   .atlas-temperature {
     bottom: 1.25rem;
-    font-size: clamp(8rem, 16vw, 13.5rem);
+    font-size: clamp(6.5rem, min(16vw, 24svh), 12rem);
   }
 
   .atlas-metrics {
@@ -1503,7 +1534,7 @@ const showDetail = (cityId) => {
   }
 
   .atlas-city-rail {
-    bottom: 32%;
+    bottom: 5.25rem;
   }
 }
 
@@ -1551,9 +1582,9 @@ const showDetail = (cityId) => {
   }
 
   .atlas-temperature {
-    bottom: 3.5rem;
-    font-size: clamp(7.5rem, 36vw, 10rem);
-    line-height: 0.85;
+    bottom: clamp(4.25rem, 8svh, 5.5rem);
+    font-size: clamp(6.5rem, min(32vw, 22svh), 9rem);
+    line-height: 0.92;
   }
 
   .atlas-metrics {
@@ -1577,7 +1608,7 @@ const showDetail = (cityId) => {
 
   .atlas-city-rail {
     right: auto;
-    bottom: 31%;
+    bottom: clamp(10.5rem, 27svh, 13rem);
     left: 0;
     max-width: 100%;
   }
@@ -1619,6 +1650,12 @@ const showDetail = (cityId) => {
     width: calc(100% - 2rem);
   }
 
+  .search-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .city-index-preview {
     min-height: 420px;
   }
@@ -1651,12 +1688,12 @@ const showDetail = (cityId) => {
 
   .atlas-kicker {
     margin-bottom: 0.7rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .atlas-condition {
     margin-bottom: 0.35em;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .atlas-metrics {
@@ -1681,7 +1718,7 @@ const showDetail = (cityId) => {
   background: #ebe8e0;
   color: #1e211f;
   box-shadow: none;
-  font-size: 0.62rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.12em;
 }

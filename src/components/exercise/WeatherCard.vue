@@ -112,7 +112,7 @@ const getCardGradient = (status) => {
 
 .weather-card::before {
   color: #777872;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   content: counter(city-row, decimal-leading-zero);
@@ -178,7 +178,7 @@ const getCardGradient = (status) => {
   display: block;
   margin-top: 0.4rem;
   color: #70716d;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -200,7 +200,7 @@ const getCardGradient = (status) => {
 
 .card-body strong,
 .label {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -223,7 +223,7 @@ const getCardGradient = (status) => {
   border-bottom: 1px solid currentColor;
   color: inherit;
   background: transparent;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;

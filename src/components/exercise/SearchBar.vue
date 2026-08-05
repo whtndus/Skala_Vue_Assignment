@@ -277,7 +277,7 @@ const queryModel = computed({
   width: 100%;
   padding: 0;
   color: #70726e;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.1em;
 }

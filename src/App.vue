@@ -1,6 +1,5 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import UnitToggler from '@/components/exercise/UnitToggler.vue'
 
 const route = useRoute()
 </script>
@@ -16,7 +15,6 @@ const route = useRoute()
           <RouterLink to="/practice">Vue 실습</RouterLink>
           <RouterLink to="/about">서비스 소개</RouterLink>
         </nav>
-        <UnitToggler />
       </div>
     </header>
 
@@ -32,20 +30,24 @@ const route = useRoute()
 }
 
 .site-header {
+  position: sticky;
+  z-index: 50;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
-  width: min(100% - 3rem, 1280px);
+  width: 100%;
   margin: 0 auto;
-  padding: 1.25rem 0;
+  padding: 1.25rem max(1.5rem, calc((100vw - 1280px) / 2));
   border-bottom: 1px solid rgba(27, 30, 29, 0.2);
+  background: rgba(233, 231, 225, 0.96);
 }
 
 .site-header h1 {
   margin: 0;
   color: #1e211f;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.16em;
 }
@@ -69,7 +71,7 @@ const route = useRoute()
   padding: 0.25rem 0;
   border-bottom: 1px solid transparent;
   color: #5f625f;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -86,12 +88,13 @@ const route = useRoute()
 }
 
 .atlas-route .site-header {
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  z-index: 50;
   top: 0;
   right: 0;
   left: 0;
   border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(24, 28, 26, 0.88);
 }
 
 .atlas-route .site-header h1,
@@ -99,23 +102,11 @@ const route = useRoute()
   color: rgba(255, 255, 255, 0.9);
 }
 
-.atlas-route :deep(.unit-label),
-.atlas-route :deep(.unit-button),
-.atlas-route :deep(.unit-button .active) {
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.atlas-route :deep(.unit-button) {
-  border-color: rgba(255, 255, 255, 0.42);
-  background: transparent;
-  box-shadow: none;
-}
-
 .atlas-route .main-content {
   padding-bottom: 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 760px) {
   .header-controls {
     width: 100%;
   }
@@ -136,7 +127,7 @@ const route = useRoute()
     align-items: flex-start;
     flex-direction: column;
     gap: 0.65rem;
-    width: min(100% - 2rem, 1280px);
+    padding: 1rem;
   }
 }
 </style>

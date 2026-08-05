@@ -302,7 +302,7 @@ onMounted(async () => {
 .observation-grid small {
   margin-left: 2px;
   color: #888;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .navigation-actions {
@@ -446,7 +446,7 @@ onMounted(async () => {
 .page-heading p:not(.eyebrow),
 .eyebrow {
   color: inherit;
-  font-size: clamp(0.7rem, 0.8vw, 0.78rem);
+  font-size: clamp(0.75rem, 0.8vw, 0.82rem);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -462,7 +462,7 @@ onMounted(async () => {
 
 .weather-status {
   margin: 0 0 0.8rem;
-  font-size: clamp(0.72rem, 0.85vw, 0.8rem);
+  font-size: clamp(0.75rem, 0.85vw, 0.82rem);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -471,11 +471,11 @@ onMounted(async () => {
 .weather-hero h2 {
   margin: 0 0 0 -0.025em;
   color: inherit;
-  font-size: clamp(8.5rem, 18vw, 16rem);
+  font-size: clamp(7rem, min(18vw, 24svh), 16rem);
   font-weight: 250;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.11em;
-  line-height: 0.82;
+  letter-spacing: -0.09em;
+  line-height: 0.92;
 }
 
 .hero-summary {
@@ -486,7 +486,7 @@ onMounted(async () => {
 }
 
 .hero-summary span {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   letter-spacing: 0.14em;
 }
 
@@ -591,7 +591,7 @@ onMounted(async () => {
   }
 
   .weather-hero h2 {
-    font-size: clamp(7.5rem, 35vw, 10rem);
+    font-size: clamp(6.5rem, min(32vw, 20svh), 9rem);
   }
 
   .hero-summary {
