@@ -15,7 +15,7 @@ const weatherStore = useWeatherStore()
 const { isSearching, searchError } = storeToRefs(weatherStore)
 
 const city = computed(() => weatherStore.findWeatherById(route.params.cityId))
-const dataSourceLabel = computed(() => (city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : 'Mock Data 관측 정보'))
+const dataSourceLabel = computed(() => (city.value?.source === 'live' ? 'OpenWeather 실시간 관측 정보' : '샘플 관측 데이터'))
 const precipitationLabel = computed(() => (city.value?.precipitationType === 'rainfall' ? '최근 1시간 강수량' : '강수 확률'))
 const precipitationUnit = computed(() => (city.value?.precipitationType === 'rainfall' ? 'mm' : '%'))
 const homeRoute = computed(() => ({
@@ -89,7 +89,7 @@ onMounted(async () => {
 
       <section class="observation-card" aria-labelledby="observation-title">
         <div class="card-header">
-          <h2 id="observation-title">Detailed observation</h2>
+          <h2 id="observation-title">상세 관측 정보</h2>
           <span>{{ city.observedAt }} 업데이트</span>
         </div>
 

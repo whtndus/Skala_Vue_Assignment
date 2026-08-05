@@ -53,7 +53,7 @@ const practiceSections = [
   },
   {
     id: 'vue-directive',
-    title: 'Vue Directive',
+    title: 'Vue 디렉티브',
     description: 'Vue 템플릿에서 DOM 출력과 속성, 조건, 반복 렌더링을 제어합니다.',
     lessons: [
       { label: 'v-text', component: VueText },
@@ -74,7 +74,7 @@ const practiceSections = [
   },
   {
     id: 'event-handling',
-    title: 'Vue Event Handling',
+    title: 'Vue 이벤트 처리',
     description: 'v-on을 이용한 이벤트 처리와 이벤트 객체, 수식어 사용법을 실습합니다.',
     lessons: [
       { label: 'v-on Event Handler', component: EventBasic },
@@ -84,7 +84,7 @@ const practiceSections = [
   },
   {
     id: 'form-handling',
-    title: 'Vue Form Handling',
+    title: 'Vue 폼 처리',
     description: 'v-model 양방향 바인딩과 HTML 폼 요소별 데이터 연결 방식을 확인합니다.',
     lessons: [
       { label: 'v-model 양방향 데이터 바인딩', component: ModelBasic },
@@ -94,13 +94,13 @@ const practiceSections = [
   },
   {
     id: 'vue-style',
-    title: 'Vue Style',
+    title: 'Vue 스타일',
     description: 'Scoped CSS와 외부 스타일을 활용해 컴포넌트 스타일의 적용 범위를 확인합니다.',
     lessons: [{ label: 'Vue Style Example', component: StyleScoped }],
   },
   {
     id: 'reactive-state',
-    title: 'Reactive State',
+    title: '반응형 상태',
     description: 'ref와 reactive로 선언한 상태가 화면과 어떻게 연결되는지 확인합니다.',
     lessons: [
       { label: 'ref() Example', component: ReactiveRef },
@@ -109,7 +109,7 @@ const practiceSections = [
   },
   {
     id: 'computed-watchers',
-    title: 'Computed & Watchers',
+    title: 'Computed와 Watchers',
     description: '파생 상태를 캐싱하고 반응형 데이터의 변화를 다양한 방식으로 감시합니다.',
     lessons: [
       { label: 'computed() Example', component: ComputedBasic },
@@ -122,19 +122,19 @@ const practiceSections = [
   },
   {
     id: 'component-lifecycle',
-    title: 'Component Lifecycle',
+    title: '컴포넌트 생명주기',
     description: '컴포넌트가 생성되고 갱신되며 사라지는 생명주기를 관찰합니다.',
     lessons: [{ label: 'Lifecycle Hook Example', component: LifecycleParent }],
   },
   {
     id: 'props-emits',
-    title: 'Props & Emits',
+    title: 'Props와 Emits',
     description: '부모와 자식 컴포넌트가 데이터와 이벤트를 주고받는 흐름을 실습합니다.',
     lessons: [{ label: 'Props & Emits Example', component: PropsEmitsParent }],
   },
   {
     id: 'component-slot',
-    title: 'Component Slot',
+    title: '컴포넌트 슬롯',
     description: '기본·이름·범위 슬롯을 사용해 재사용 가능한 UI를 구성합니다.',
     lessons: [
       { label: 'Default Slot Example', component: SlotDefaultParent },
@@ -144,7 +144,7 @@ const practiceSections = [
   },
   {
     id: 'pinia-store',
-    title: 'Pinia Store',
+    title: 'Pinia 스토어',
     description: '컴포넌트 밖의 전역 상태를 만들고 여러 화면에서 공유합니다.',
     lessons: [{ label: 'Pinia Counter Store', component: StoreCounter }],
   },
@@ -159,7 +159,7 @@ const practiceSections = [
   },
   {
     id: 'element-plus',
-    title: 'Element Plus',
+    title: 'Element Plus 실습',
     description: 'Element Plus의 폼, 데이터 입력, 피드백 컴포넌트를 반응형 상태와 연결해 실습합니다.',
     lessons: [{ label: 'Element Plus UI Components', component: ElementPlusPractice }],
   },
@@ -664,6 +664,355 @@ const moveSection = (direction) => {
 
   .chapter-button {
     width: 100%;
+  }
+}
+
+/* WEATHER / ATLAS editorial system */
+.practice-container {
+  --el-color-primary: var(--atlas-accent);
+  --el-color-success: var(--atlas-accent);
+  --el-color-danger: #79584f;
+  --el-border-radius-base: 1px;
+  --el-border-radius-small: 1px;
+  --el-box-shadow-light: none;
+  padding: clamp(3rem, 6vw, 6rem) 0 7rem;
+}
+
+.practice-heading {
+  align-items: flex-end;
+  margin-bottom: clamp(2.5rem, 5vw, 5rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem) 0;
+  border-top: 1px solid var(--atlas-line-strong);
+  border-bottom: 1px solid var(--atlas-line);
+  border-radius: 0;
+  color: var(--atlas-ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.practice-heading p,
+.chapter-heading p {
+  color: var(--atlas-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+}
+
+.practice-heading h1 {
+  margin: 0.45rem 0 0.75rem;
+  color: var(--atlas-ink);
+  font-size: clamp(2.8rem, 6vw, 6rem);
+  font-weight: 560;
+  letter-spacing: -0.065em;
+  line-height: 0.95;
+}
+
+.practice-heading > div:first-child > span {
+  color: var(--atlas-muted);
+  font-size: clamp(0.88rem, 1.2vw, 1rem);
+  opacity: 1;
+}
+
+.heading-progress {
+  min-width: 110px;
+  padding-left: 2rem;
+  border-left-color: var(--atlas-line);
+}
+
+.heading-progress strong {
+  color: var(--atlas-ink);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 350;
+}
+
+.heading-progress span {
+  color: var(--atlas-muted);
+  font-size: 0.75rem;
+}
+
+.practice-layout {
+  grid-template-columns: 230px minmax(0, 1fr) 210px;
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
+.practice-sidebar,
+.practice-context {
+  top: 6.25rem;
+}
+
+.practice-sidebar,
+.context-card,
+.practice-chapter {
+  border: 0;
+  border-top: 1px solid var(--atlas-line-strong);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.practice-sidebar {
+  overflow: visible;
+}
+
+.sidebar-heading {
+  padding: 1rem 0;
+  border-bottom-color: var(--atlas-line);
+}
+
+.sidebar-heading span,
+.context-eyebrow {
+  color: var(--atlas-accent);
+  font-size: 0.75rem;
+}
+
+.sidebar-heading strong {
+  color: var(--atlas-ink);
+}
+
+.practice-navigation {
+  padding: 0;
+}
+
+.practice-navigation-item {
+  gap: 0.8rem;
+  min-height: 58px;
+  padding: 0.7rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--atlas-line);
+  border-radius: 0;
+  color: var(--atlas-muted);
+}
+
+.practice-navigation-item:hover:not(:disabled) {
+  color: var(--atlas-ink);
+  background: var(--atlas-paper-soft);
+}
+
+.practice-navigation-item.active {
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+  box-shadow: none;
+}
+
+.navigation-number {
+  flex-basis: 38px;
+  width: 38px;
+  height: 34px;
+  border-right: 1px solid var(--atlas-line);
+  border-radius: 0;
+  color: var(--atlas-accent);
+  background: transparent;
+  font-size: 0.75rem;
+}
+
+.active .navigation-number {
+  color: #c4d1d4;
+  background: transparent;
+}
+
+.navigation-copy strong {
+  font-size: 0.86rem;
+}
+
+.navigation-copy small {
+  color: inherit;
+  font-size: 0.75rem;
+}
+
+.practice-chapter {
+  padding: 1.25rem 0 0;
+}
+
+.chapter-heading {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom-color: var(--atlas-line);
+}
+
+.chapter-heading h2 {
+  margin: 0.35rem 0 0.65rem;
+  color: var(--atlas-ink);
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 520;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.chapter-heading span {
+  color: var(--atlas-muted);
+  font-size: 0.9rem;
+}
+
+.lesson-block + .lesson-block {
+  margin-top: 2.5rem;
+}
+
+.lesson-label {
+  display: block;
+  margin: 0 0 1rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--atlas-line);
+  border-bottom: 1px solid #d0cec8;
+  border-radius: 0;
+  color: var(--atlas-ink);
+  background: transparent;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.lesson-block :deep(.el-card) {
+  border-color: var(--atlas-line);
+  border-radius: 1px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lesson-block :deep(.el-card__header) {
+  border-bottom-color: var(--atlas-line);
+}
+
+.lesson-block :deep(.el-input__wrapper),
+.lesson-block :deep(.el-input-number),
+.lesson-block :deep(.el-button),
+.lesson-block :deep(.el-progress-bar__outer) {
+  border-radius: 1px;
+  box-shadow: none;
+}
+
+.lesson-block :deep(.input-group),
+.lesson-block :deep(.btn-zone) {
+  flex-wrap: wrap;
+}
+
+.lesson-block :deep(.el-input) {
+  max-width: 100%;
+}
+
+.chapter-controls {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--atlas-line-strong);
+}
+
+.chapter-controls > span {
+  color: var(--atlas-muted);
+}
+
+.chapter-button {
+  border-radius: 1px;
+}
+
+.chapter-button.primary {
+  border-color: var(--atlas-ink);
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+}
+
+.chapter-button.primary:hover:not(:disabled) {
+  border-color: var(--atlas-accent);
+  color: #fff;
+  background: var(--atlas-accent);
+}
+
+.practice-context {
+  gap: 2rem;
+}
+
+.context-card {
+  padding: 1rem 0;
+}
+
+.context-card > strong {
+  color: var(--atlas-ink);
+  font-size: 2.3rem;
+  font-weight: 400;
+}
+
+.progress-track {
+  height: 2px;
+  border-radius: 0;
+  background: #cbc9c3;
+}
+
+.progress-track span {
+  border-radius: 0;
+  background: var(--atlas-accent);
+  transition: width 250ms ease;
+}
+
+.context-card p,
+.lesson-list li {
+  color: var(--atlas-muted);
+  font-size: 0.78rem;
+}
+
+.lesson-list h3 {
+  color: var(--atlas-ink);
+}
+
+.lesson-list li::before {
+  width: 6px;
+  height: 1px;
+  border-radius: 0;
+  background: var(--atlas-accent);
+}
+
+.practice-navigation-item:focus-visible,
+.chapter-button:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1080px) {
+  .practice-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .practice-container {
+    padding: 2.5rem 0 5rem;
+  }
+
+  .practice-heading {
+    padding: 1.5rem 0;
+  }
+
+  .practice-heading h1 {
+    font-size: clamp(2.65rem, 14vw, 4.25rem);
+  }
+
+  .practice-sidebar {
+    margin-bottom: 2rem;
+    border-radius: 0;
+  }
+
+  .practice-navigation {
+    gap: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--atlas-line-strong);
+  }
+
+  .practice-navigation-item {
+    padding: 0.65rem 0.8rem;
+    border-right: 1px solid var(--atlas-line);
+    border-bottom: 0;
+  }
+
+  .navigation-number {
+    flex-basis: auto;
+    width: auto;
+    height: auto;
+    border-right: 0;
+  }
+
+  .practice-chapter {
+    padding: 1rem 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-track span {
+    transition: none;
   }
 }
 </style>

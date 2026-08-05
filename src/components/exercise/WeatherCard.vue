@@ -69,7 +69,7 @@ const getCardGradient = (status) => {
       <span class="weather-icon" :data-weather-icon="getWeatherIcon(cityItem.status)" aria-hidden="true">—</span>
       <div>
         <h4 class="city-name">{{ cityItem.name }}</h4>
-        <small>{{ cityItem.country || 'KOREA' }}</small>
+        <small>{{ cityItem.country || '대한민국' }}</small>
       </div>
     </div>
 

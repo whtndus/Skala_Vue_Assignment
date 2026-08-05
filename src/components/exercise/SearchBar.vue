@@ -78,7 +78,7 @@ const queryModel = computed({
     </p>
 
     <p class="parent-query">
-      부모 searchQuery: <strong>{{ currentQuery || '(빈 값)' }}</strong>
+      현재 검색어: <strong>{{ currentQuery || '(빈 값)' }}</strong>
     </p>
 
     <p class="search-info" v-if="currentQuery.trim()">

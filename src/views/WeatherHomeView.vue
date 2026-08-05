@@ -34,7 +34,7 @@ const { favoriteCities, favoriteCount } = storeToRefs(favoritesStore)
 const { isFavorite, toggleFavorite } = favoritesStore
 
 // 2. 상태바 제어 반응형 데이터
-const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
+const selectedCityInfo = ref('도시를 선택하거나 검색해 보세요.')
 const activeCityId = ref(weatherList.value[0]?.id || '')
 
 // 3. 검색 상태와 파생 데이터는 Composable에서 관리
@@ -340,15 +340,15 @@ const showDetail = (cityId) => {
 
         <dl class="atlas-metrics">
           <div>
-            <dt>FEELS</dt>
+            <dt>체감</dt>
             <dd>{{ formatTemperature(activeCity.feelsLike) }}</dd>
           </div>
           <div>
-            <dt>HUMIDITY</dt>
+            <dt>습도</dt>
             <dd>{{ activeCity.humidity }}%</dd>
           </div>
           <div>
-            <dt>WIND</dt>
+            <dt>풍속</dt>
             <dd>{{ activeCity.windSpeed }} m/s</dd>
           </div>
         </dl>
@@ -372,16 +372,21 @@ const showDetail = (cityId) => {
             {{ city.name }}
           </button>
         </nav>
+
+        <a class="atlas-scroll-cue" href="#forecast" aria-label="향후 18시간 예보로 이동">
+          <span>SCROLL TO FORECAST</span>
+          <span class="atlas-scroll-line" aria-hidden="true"></span>
+        </a>
       </div>
     </section>
 
-    <section v-if="activeCity" class="atlas-timeline" aria-labelledby="timeline-title">
+    <section v-if="activeCity" id="forecast" class="atlas-timeline" aria-labelledby="timeline-title">
       <header>
         <div>
           <p>LIVE FORECAST / 3-HOUR INTERVALS</p>
-          <h2 id="timeline-title">Next 18 hours</h2>
+          <h2 id="timeline-title">향후 18시간</h2>
         </div>
-        <span>{{ activeCity.name }} · OPENWEATHER FORECAST</span>
+        <span>{{ activeCity.name }} · 3시간 간격 예보</span>
       </header>
 
       <div v-if="timelineReadings.length" class="timeline-chart">
@@ -401,7 +406,7 @@ const showDetail = (cityId) => {
           <span v-for="reading in timelineReadings" :key="reading.timestamp">
             <small>{{ reading.label }}</small>
             <strong>{{ formatTemperature(reading.temperature) }}</strong>
-            <em v-if="reading.precipitationProbability">RAIN {{ reading.precipitationProbability }}%</em>
+            <em v-if="reading.precipitationProbability">강수 {{ reading.precipitationProbability }}%</em>
           </span>
         </div>
       </div>
@@ -438,7 +443,7 @@ const showDetail = (cityId) => {
     <!-- 2) 선택 도시 상태바 -->
     <div class="status-bar">
       <span class="status-icon" aria-hidden="true">●</span>
-      <span class="visually-hidden">{{ selectedCityInfo === '카드를 클릭하거나 검색해 보세요.' ? '안내' : '선택 위치' }}</span>
+      <span class="visually-hidden">{{ selectedCityInfo === '도시를 선택하거나 검색해 보세요.' ? '안내' : '선택 위치' }}</span>
       <span>{{ selectedCityInfo }}</span>
     </div>
 
@@ -551,6 +556,10 @@ const showDetail = (cityId) => {
 </template>
 
 <style scoped>
+:global(html) {
+  scroll-behavior: smooth;
+}
+
 .dashboard-wrapper {
   max-width: 900px;
   margin: 0 auto;
@@ -1041,6 +1050,12 @@ const showDetail = (cityId) => {
   border-radius: 50%;
 }
 
+.atlas-navigation button:focus-visible,
+.atlas-city-rail button:focus-visible {
+  outline: 2px solid #f2efe7;
+  outline-offset: 3px;
+}
+
 .atlas-navigation span {
   font-size: 0.75rem;
   font-weight: 700;
@@ -1071,6 +1086,40 @@ const showDetail = (cityId) => {
 .atlas-city-rail button.active {
   border-bottom-color: currentColor;
   opacity: 1;
+}
+
+.atlas-scroll-cue {
+  position: absolute;
+  z-index: 3;
+  bottom: 1rem;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.atlas-scroll-cue:hover {
+  color: #fff;
+}
+
+.atlas-scroll-cue:focus-visible {
+  outline: 2px solid #f2efe7;
+  outline-offset: 4px;
+}
+
+.atlas-scroll-line {
+  width: 1px;
+  height: 26px;
+  background: currentColor;
+  transform-origin: top;
+  animation: atlas-scroll-line 1.8s ease-in-out infinite alternate;
 }
 
 .atlas-backdrop-enter-active,
@@ -1120,6 +1169,7 @@ const showDetail = (cityId) => {
   align-items: end;
   gap: clamp(2rem, 5vw, 5rem);
   min-height: 250px;
+  scroll-margin-top: 5.5rem;
   padding: clamp(1.75rem, 3vw, 2.75rem) max(3vw, calc((100vw - 1280px) / 2));
   color: #eae7df;
   background: #1d211f;
@@ -1377,6 +1427,13 @@ const showDetail = (cityId) => {
   background: transparent;
 }
 
+.status-filter button:focus-visible,
+.favorite-chips button:focus-visible,
+.custom-detail-btn:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 3px;
+}
+
 .sort-control select {
   border: 0;
   border-bottom: 1px solid #81817c;
@@ -1494,6 +1551,17 @@ const showDetail = (cityId) => {
   }
   to {
     transform: scale(1.025) translateX(0);
+  }
+}
+
+@keyframes atlas-scroll-line {
+  from {
+    opacity: 0.48;
+    transform: scaleY(0.58);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
   }
 }
 
@@ -1618,10 +1686,16 @@ const showDetail = (cityId) => {
     bottom: 1rem;
   }
 
+  .atlas-scroll-cue {
+    bottom: 0.65rem;
+    font-size: 0.7rem;
+  }
+
   .atlas-timeline {
     grid-template-columns: 1fr;
     gap: 1.25rem;
     min-height: 0;
+    scroll-margin-top: 7rem;
     padding-inline: 1rem;
   }
 
@@ -1702,11 +1776,19 @@ const showDetail = (cityId) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :global(html) {
+    scroll-behavior: auto;
+  }
+
   .atlas-backdrop,
   .atlas-copy,
   .atlas-temperature {
     animation: none;
     transition: none;
+  }
+
+  .atlas-scroll-line {
+    animation: none;
   }
 }
 

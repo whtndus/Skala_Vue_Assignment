@@ -83,6 +83,15 @@ const route = useRoute()
   background: transparent;
 }
 
+.navigation a:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 4px;
+}
+
+.atlas-route .navigation a:focus-visible {
+  outline-color: #f2efe7;
+}
+
 .main-content {
   padding-bottom: 3rem;
 }

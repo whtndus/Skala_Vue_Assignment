@@ -1,5 +1,11 @@
 <template>
   <div class="about-page">
+    <header class="about-heading">
+      <p>ABOUT / WEATHER ATLAS</p>
+      <h1>도시의 날씨를 읽는 방법</h1>
+      <span>실시간 관측과 Vue 학습 요소를 하나의 에디토리얼 날씨 경험으로 구성했습니다.</span>
+    </header>
+
     <section class="about-card">
       <div class="card-header">
         <h2>서비스에서 할 수 있는 일</h2>
@@ -36,7 +42,7 @@
       </ul>
     </section>
 
-    <RouterLink class="home-link" to="/">← 메인 대시보드로 돌아가기</RouterLink>
+    <RouterLink class="home-link" to="/">← 날씨 대시보드로 돌아가기</RouterLink>
   </div>
 </template>
 
@@ -150,6 +156,171 @@
 @media (max-width: 700px) {
   .feature-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* WEATHER / ATLAS editorial system */
+.about-page {
+  width: min(100% - 3rem, 1280px);
+  max-width: none;
+  margin: 0 auto;
+  padding: clamp(3rem, 6vw, 6rem) 0 7rem;
+  color: var(--atlas-ink);
+}
+
+.about-heading {
+  margin-bottom: clamp(4rem, 8vw, 7rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem) 0;
+  border-top: 1px solid var(--atlas-line-strong);
+  border-bottom: 1px solid var(--atlas-line);
+}
+
+.about-heading p {
+  margin: 0 0 0.65rem;
+  color: var(--atlas-accent);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+.about-heading h1 {
+  margin: 0 0 1rem;
+  color: var(--atlas-ink);
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 520;
+  letter-spacing: -0.07em;
+  line-height: 0.92;
+}
+
+.about-heading span {
+  display: block;
+  max-width: 48rem;
+  color: var(--atlas-muted);
+  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+}
+
+.about-card {
+  margin-bottom: clamp(4rem, 7vw, 6rem);
+  border-top-color: var(--atlas-line-strong);
+}
+
+.card-header {
+  margin: 0;
+  padding: 1rem 0 2rem;
+  border-bottom-color: var(--atlas-line);
+}
+
+.card-header h2 {
+  color: var(--atlas-ink);
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+  font-weight: 520;
+  letter-spacing: -0.045em;
+}
+
+.feature-grid {
+  gap: 0;
+}
+
+.feature-grid article {
+  min-height: 260px;
+  padding: 2rem 2rem 2rem 0;
+  border-right-color: var(--atlas-line);
+  border-bottom-color: var(--atlas-line);
+}
+
+.feature-grid article + article {
+  padding-left: 2rem;
+}
+
+.feature-grid article:last-child {
+  border-right: 0;
+}
+
+.feature-grid article > span {
+  color: var(--atlas-accent);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 350;
+}
+
+.feature-grid h3 {
+  margin: 2.5rem 0 0.7rem;
+  color: var(--atlas-ink);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-weight: 600;
+}
+
+.feature-grid p,
+.technology-card li {
+  color: var(--atlas-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.technology-card ul {
+  gap: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: technology-item;
+}
+
+.technology-card li {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: baseline;
+  padding: 1.05rem 0;
+  border-bottom: 1px solid var(--atlas-line);
+  counter-increment: technology-item;
+}
+
+.technology-card li::before {
+  color: var(--atlas-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  content: counter(technology-item, decimal-leading-zero);
+}
+
+.technology-card code {
+  color: var(--atlas-accent);
+}
+
+.home-link {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--atlas-ink);
+  border-radius: 1px;
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+}
+
+.home-link:hover {
+  border-color: var(--atlas-accent);
+  color: #fff;
+  background: var(--atlas-accent);
+}
+
+.home-link:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  .about-page {
+    width: calc(100% - 2rem);
+    padding: 2.5rem 0 5rem;
+  }
+
+  .about-heading h1 {
+    font-size: clamp(2.8rem, 15vw, 4.5rem);
+  }
+
+  .feature-grid article,
+  .feature-grid article + article {
+    min-height: 0;
+    padding: 1.5rem 0 2rem;
+    border-right: 0;
+  }
+
+  .feature-grid h3 {
+    margin-top: 1.25rem;
   }
 }
 </style>
