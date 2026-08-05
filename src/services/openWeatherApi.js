@@ -54,6 +54,25 @@ export const formatCityTime = (unixTime, timezoneOffset = 0, options = {}) => {
   }).format(localTime)
 }
 
+const getCityLocalDate = (unixTime, timezoneOffset = 0) => {
+  const timestamp = toNullableNumber(unixTime)
+  const offset = toNullableNumber(timezoneOffset)
+  if (timestamp === null || offset === null) return null
+  return new Date((timestamp + offset) * 1000)
+}
+
+export const formatCityDate = (unixTime, timezoneOffset = 0, options = {}) => {
+  const localDate = getCityLocalDate(unixTime, timezoneOffset)
+  if (!localDate) return null
+  return new Intl.DateTimeFormat('ko-KR', { timeZone: 'UTC', ...options }).format(localDate)
+}
+
+const getCityDateKey = (unixTime, timezoneOffset = 0) => {
+  const localDate = getCityLocalDate(unixTime, timezoneOffset)
+  if (!localDate) return ''
+  return `${localDate.getUTCFullYear()}-${String(localDate.getUTCMonth() + 1).padStart(2, '0')}-${String(localDate.getUTCDate()).padStart(2, '0')}`
+}
+
 export const getWindDirectionLabel = (degrees) => {
   const normalizedDegrees = toNullableNumber(degrees)
   if (normalizedDegrees === null) return null
@@ -146,30 +165,51 @@ export const fetchWeatherByCity = async (cityName) => {
 
 export const fetchForecastByCoordinates = async ({ lat, lon }) => {
   const apiKey = import.meta.env.VITE_WEATHER_API_KEY
+  const latitude = toNullableNumber(lat)
+  const longitude = toNullableNumber(lon)
 
   if (!apiKey) throw new Error('OpenWeather API 키가 없습니다. .env 파일의 VITE_WEATHER_API_KEY 환경변수를 확인해 주세요.')
-  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) throw new Error('예보를 조회할 도시 좌표가 없습니다.')
+  if (latitude === null || longitude === null) throw new Error('예보를 조회할 도시 좌표가 없습니다.')
 
   const response = await axios.get(OPEN_WEATHER_FORECAST_URL, {
     params: {
-      lat,
-      lon,
+      lat: latitude,
+      lon: longitude,
       appid: apiKey,
       units: 'metric',
       lang: 'kr',
-      cnt: 6,
+      cnt: 40,
     },
   })
 
   const timezoneOffset = toNullableNumber(response.data.city?.timezone)
 
   return (response.data.list || [])
-    .map((forecast) => ({
-      timestamp: forecast.dt,
-      label: formatCityTime(forecast.dt, timezoneOffset, { weekday: 'short', hour: '2-digit', hour12: false }),
-      temperature: roundToOneDecimal(forecast.main?.temp),
-      description: forecast.weather?.[0]?.description || '',
-      precipitationProbability: Math.round(Number(forecast.pop || 0) * 100),
-    }))
+    .map((forecast) => {
+      const rainVolume = roundToOneDecimal(forecast.rain?.['3h'])
+      const snowVolume = roundToOneDecimal(forecast.snow?.['3h'])
+      const localDate = getCityLocalDate(forecast.dt, timezoneOffset)
+      const precipitationProbability = toNullableNumber(forecast.pop)
+
+      return {
+        timestamp: forecast.dt,
+        dateKey: getCityDateKey(forecast.dt, timezoneOffset),
+        dateLabel: formatCityDate(forecast.dt, timezoneOffset, { month: 'long', day: 'numeric', weekday: 'short' }),
+        label: formatCityTime(forecast.dt, timezoneOffset, { weekday: 'short', hour: '2-digit', hour12: false }),
+        timeLabel: formatCityDate(forecast.dt, timezoneOffset, { hour: '2-digit', minute: '2-digit', hour12: false }),
+        localHour: localDate?.getUTCHours() ?? null,
+        temperature: roundToOneDecimal(forecast.main?.temp),
+        feelsLike: roundToOneDecimal(forecast.main?.feels_like),
+        tempMin: roundToOneDecimal(forecast.main?.temp_min),
+        tempMax: roundToOneDecimal(forecast.main?.temp_max),
+        humidity: toNullableNumber(forecast.main?.humidity),
+        windSpeed: roundToOneDecimal(forecast.wind?.speed),
+        status: statusMap[forecast.weather?.[0]?.main] || '구름',
+        description: forecast.weather?.[0]?.description || '',
+        precipitationProbability: precipitationProbability === null ? null : Math.round(precipitationProbability * 100),
+        precipitation: rainVolume ?? snowVolume,
+        precipitationType: rainVolume !== null ? 'rain' : snowVolume !== null ? 'snow' : null,
+      }
+    })
     .filter((forecast) => forecast.temperature !== null)
 }

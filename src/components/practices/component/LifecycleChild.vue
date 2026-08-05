@@ -1,48 +1,88 @@
 <script setup>
-import { ref, onMounted, onUpdated, onUnmounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 const count = ref(0)
-let timerId = null // 실시간 타이머 메모리 주소를 담을 변수
+const logs = ref(['setup · 반응형 상태를 준비했습니다.'])
+let timerId = null
 
-// 생성 (Creation) 단계 = <script setup> 본문 그 자체
-console.log('1. [setup] 컴포넌트가 메모리에 생성되었습니다. (DOM 접근 불가능)')
+const addLog = (message) => {
+  logs.value = [message, ...logs.value].slice(0, 5)
+}
 
-// 부착 (Mounting) 단계
+const increment = async (source = '수동') => {
+  count.value += 1
+  await nextTick()
+  addLog(`updated · ${source} 갱신 #${count.value}`)
+}
+
 onMounted(() => {
-  console.log('2. [onMounted] 화면에 완벽히 부착되었습니다! (API 호출/DOM 조작 적기)')
-  // 🔥 실무 활용 시뮬레이션: 3초마다 숫자가 자동으로 올라가는 타이머 가동
-  timerId = setInterval(() => {
-    count.value++
-  }, 3000)
+  addLog('mounted · DOM 연결 및 타이머 시작')
+  timerId = window.setInterval(() => increment('자동'), 3000)
 })
 
-// 갱신 (Updating) 단계 - count 변수가 바뀌어서 화면이 리렌더링(새로고침)될 때마다 매번 실행된다.
-onUpdated(() => {
-  console.log(`3. [onUpdated] 데이터가 변경되어 화면을 새로 그렸습니다. (현재 count: ${count.value})`)
-})
-
-// 소멸 (Unmounting) 단계 - v-if="false" 등으로 이 컴포넌트가 화면에서 완전히 파괴되어 사라질 때 실행된다.
 onUnmounted(() => {
-  // ❌ 주의: 여기서 타이머를 안 꺼주면 컴포넌트가 사라져도 백그라운드에서 영원히 타이머가 돕니다! (메모리 누수)
-  clearInterval(timerId)
-  console.log('4. [onUnmounted] 컴포넌트가 소멸했습니다. 타이머 청소 완료!')
+  window.clearInterval(timerId)
 })
 </script>
 
 <template>
-  <h3>⏱️ 라이프사이클 훅 흐름 탐색기</h3>
-  <div class="counter-display">
-    <p>실시간 타이머 카운트: {{ count }}</p>
-    <button @click="count++">수동으로 숫자 올리기</button>
+  <div class="lifecycle-demo">
+    <div>
+      <p class="phase-label">ACTIVE COMPONENT</p>
+      <strong>{{ count }}</strong>
+      <button type="button" @click="increment('수동')">수동 갱신</button>
+    </div>
+    <ol aria-live="polite">
+      <li v-for="(log, index) in logs" :key="`${log}-${index}`">{{ log }}</li>
+    </ol>
   </div>
 </template>
 
 <style scoped>
-.counter-display {
-  background: #e3fafc;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #99e9f2;
-  text-align: center;
+.lifecycle-demo {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.7fr) minmax(0, 1.3fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--atlas-line);
+}
+
+.lifecycle-demo > div {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+.phase-label {
+  margin: 0;
+  color: var(--atlas-accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+strong {
+  font-size: 3rem;
+  font-weight: 380;
+  line-height: 1;
+}
+
+ol {
+  margin: 0;
+  padding: 0;
+  color: var(--atlas-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  list-style: none;
+}
+
+li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--atlas-line);
+}
+
+@media (max-width: 560px) {
+  .lifecycle-demo {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

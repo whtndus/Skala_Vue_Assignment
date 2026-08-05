@@ -1,70 +1,69 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElBacktop, ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
-import { useWeatherSearch } from '@/composables/useWeatherSearch'
 import { useTemperature } from '@/composables/useTemperature'
 import { fetchForecastByCoordinates, getWeatherErrorMessage } from '@/services/openWeatherApi'
 import { useWeatherStore } from '@/stores/weatherStore'
 import { useFavoritesStore } from '@/stores/favoritesStore'
+import { getWeatherAtlasImage } from '@/utils/weatherAtlas'
 import SearchBar from '@/components/exercise/SearchBar.vue'
-import UnitToggler from '@/components/exercise/UnitToggler.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
-import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
-import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
-import cloudCityImage from '@/assets/weather-atlas/cloud-city.jpg'
-import snowCityImage from '@/assets/weather-atlas/snow-city.jpg'
 
 const route = useRoute()
 const router = useRouter()
 const weatherStore = useWeatherStore()
 const favoritesStore = useFavoritesStore()
 const { formatTemperature } = useTemperature()
-const { weatherList, isSearching, isInitializing, searchError, initializationError, lastUpdatedCity } = storeToRefs(weatherStore)
+const { weatherList, isSearching, isInitializing, searchError, initializationError } = storeToRefs(weatherStore)
 const { favoriteCities } = storeToRefs(favoritesStore)
 const { isFavorite, toggleFavorite, reconcileFavorites } = favoritesStore
 
 const activeCityId = ref('')
-const { searchQuery, debouncedSearchQuery, filteredWeatherList } = useWeatherSearch(weatherList)
+const locationQuery = ref('')
+const locationStatus = ref('')
+const isLocationPanelOpen = ref(false)
+const addLocationButton = ref(null)
+const locationSearch = ref(null)
 const statusOptions = ['전체', '맑음', '비', '구름', '눈']
 const sortOptions = ['default', 'temp-desc', 'temp-asc', 'name']
-const getQueryText = (value) => (typeof value === 'string' ? value : '')
 const getStatus = (value) => (statusOptions.includes(value) ? value : '전체')
 const getSort = (value) => (sortOptions.includes(value) ? value : 'default')
 const getFavoritesOnly = (value) => value === '1'
+const hasValue = (value) => value !== null && value !== undefined
 
-searchQuery.value = getQueryText(route.query.q)
 const selectedStatus = ref(getStatus(route.query.status))
 const selectedSort = ref(getSort(route.query.sort))
 const favoritesOnly = ref(getFavoritesOnly(route.query.favorite))
 
-watch([debouncedSearchQuery, selectedStatus, selectedSort, favoritesOnly], ([query, status, sort, onlyFavorites]) => {
-  const nextQuery = { ...route.query }
-  if (query.trim()) nextQuery.q = query.trim()
-  else delete nextQuery.q
-  if (status !== '전체') nextQuery.status = status
-  else delete nextQuery.status
-  if (sort !== 'default') nextQuery.sort = sort
-  else delete nextQuery.sort
-  if (onlyFavorites) nextQuery.favorite = '1'
-  else delete nextQuery.favorite
+watch(
+  [selectedStatus, selectedSort, favoritesOnly],
+  ([status, sort, onlyFavorites]) => {
+    const nextQuery = { ...route.query }
+    delete nextQuery.q
+    if (status !== '전체') nextQuery.status = status
+    else delete nextQuery.status
+    if (sort !== 'default') nextQuery.sort = sort
+    else delete nextQuery.sort
+    if (onlyFavorites) nextQuery.favorite = '1'
+    else delete nextQuery.favorite
 
-  if (JSON.stringify(nextQuery) !== JSON.stringify(route.query)) router.replace({ name: 'weather-home', query: nextQuery })
-})
+    if (JSON.stringify(nextQuery) !== JSON.stringify(route.query)) router.replace({ name: 'weather-home', query: nextQuery })
+  },
+  { immediate: true },
+)
 
 watch(
-  () => [route.query.q, route.query.status, route.query.sort, route.query.favorite],
-  ([query, status, sort, favorite]) => {
-    const nextQuery = getQueryText(query)
-    if (nextQuery !== searchQuery.value) searchQuery.value = nextQuery
+  () => [route.query.status, route.query.sort, route.query.favorite],
+  ([status, sort, favorite]) => {
     selectedStatus.value = getStatus(status)
     selectedSort.value = getSort(sort)
     favoritesOnly.value = getFavoritesOnly(favorite)
   },
 )
 
-const scopedWeatherList = computed(() => (favoritesOnly.value ? filteredWeatherList.value.filter((city) => isFavorite(city.id)) : filteredWeatherList.value))
+const scopedWeatherList = computed(() => (favoritesOnly.value ? weatherList.value.filter((city) => isFavorite(city.id)) : weatherList.value))
 const favoriteCityCount = computed(() => weatherList.value.filter((city) => isFavorite(city.id)).length)
 const displayedWeatherList = computed(() => {
   const filtered = selectedStatus.value === '전체' ? scopedWeatherList.value : scopedWeatherList.value.filter((city) => city.status === selectedStatus.value)
@@ -76,10 +75,9 @@ const displayedWeatherList = computed(() => {
 })
 
 const activeCity = computed(() => weatherStore.findWeatherById(activeCityId.value) || displayedWeatherList.value[0] || weatherList.value[0] || null)
-const atlasImages = { 맑음: clearCityImage, 비: rainCityImage, 구름: cloudCityImage, 눈: snowCityImage }
 const atlasHeadlines = { 맑음: 'CLEAR ABOVE THE CITY', 비: 'RAIN AFTER MIDNIGHT', 구름: 'CLOUDS OVER THE WATER', 눈: 'WHITE AIR, HIGH GROUND' }
 const atlasThemeClasses = { 맑음: 'atlas-clear', 비: 'atlas-rain', 구름: 'atlas-clouds', 눈: 'atlas-snow' }
-const activeAtlasImage = computed(() => atlasImages[activeCity.value?.status] || cloudCityImage)
+const activeAtlasImage = computed(() => getWeatherAtlasImage(activeCity.value))
 const activeAtlasHeadline = computed(() => atlasHeadlines[activeCity.value?.status] || 'WEATHER ACROSS THE CITY')
 const activeAtlasTheme = computed(() => atlasThemeClasses[activeCity.value?.status] || 'atlas-clouds')
 const activeCityNameLength = computed(() => Array.from(activeCity.value?.name || '').length)
@@ -90,12 +88,7 @@ const averageTemperature = computed(() => {
   return validTemperatures.value.reduce((total, city) => total + Number(city.temp), 0) / validTemperatures.value.length
 })
 const warmestCity = computed(() => [...validTemperatures.value].sort((a, b) => b.temp - a.temp)[0] || null)
-const commandStatus = computed(() => {
-  if (isInitializing.value) return '기본 도시와 저장된 도시의 실시간 관측을 불러오는 중입니다.'
-  if (lastUpdatedCity.value) return `${lastUpdatedCity.value.name} 실시간 관측을 반영했습니다.`
-  return ''
-})
-const commandError = computed(() => searchError.value || initializationError.value)
+const locationError = computed(() => searchError.value || initializationError.value)
 
 const forecastReadings = ref([])
 const isForecastLoading = ref(false)
@@ -160,22 +153,39 @@ const moveActiveCity = (direction) => {
 const getStatusCount = (status) => (status === '전체' ? scopedWeatherList.value.length : scopedWeatherList.value.filter((city) => city.status === status).length)
 const showMessage = (message, type = 'success') => ElMessage({ message, type, duration: 2200, customClass: 'atlas-message' })
 
-const handleCitySearch = async (cityName) => {
-  selectedStatus.value = '전체'
-  const city = await weatherStore.searchCityWeather(cityName)
-  if (!city) {
-    showMessage(searchError.value || '날씨 정보를 불러오지 못했습니다.', 'error')
-    return
-  }
-  searchQuery.value = city.name
-  activeCityId.value = city.id
-  showMessage(`${city.name}의 실시간 관측을 반영했습니다.`)
+const openLocationPanel = async () => {
+  isLocationPanelOpen.value = true
+  locationStatus.value = ''
+  await nextTick()
+  locationSearch.value?.focusInput()
 }
-const updateSearchQuery = (value) => {
-  searchQuery.value = value
+const closeLocationPanel = async () => {
+  isLocationPanelOpen.value = false
+  await nextTick()
+  addLocationButton.value?.focus()
+}
+const toggleLocationPanel = () => {
+  if (isLocationPanelOpen.value) closeLocationPanel()
+  else openLocationPanel()
+}
+const updateLocationQuery = (value) => {
+  locationQuery.value = value
+  if (searchError.value) weatherStore.clearSearchError()
+}
+const handleLocationSearch = async (cityName) => {
+  locationStatus.value = ''
+  const city = await weatherStore.searchCityWeather(cityName)
+  if (!city) return
+
+  selectedStatus.value = '전체'
+  favoritesOnly.value = false
+  activeCityId.value = city.id
+  locationQuery.value = ''
+  locationStatus.value = '새로운 실시간 관측 지점을 추가했습니다.'
+  showMessage(locationStatus.value)
+  await closeLocationPanel()
 }
 const resetFilters = () => {
-  searchQuery.value = ''
   selectedStatus.value = '전체'
   favoritesOnly.value = false
 }
@@ -195,6 +205,13 @@ onMounted(async () => {
   activeCityId.value = weatherList.value[0]?.id || ''
 })
 onBeforeUnmount(() => clearTimeout(forecastTimer))
+
+watch(isInitializing, async (initializing) => {
+  if (!initializing && isLocationPanelOpen.value) {
+    await nextTick()
+    locationSearch.value?.focusInput()
+  }
+})
 </script>
 
 <template>
@@ -234,11 +251,11 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
             </div>
             <div>
               <dt>습도</dt>
-              <dd>{{ activeCity.humidity ?? '정보 없음' }}<template v-if="activeCity.humidity != null">%</template></dd>
+              <dd>{{ activeCity.humidity ?? '정보 없음' }}<template v-if="hasValue(activeCity.humidity)">%</template></dd>
             </div>
             <div>
               <dt>풍속</dt>
-              <dd>{{ activeCity.windSpeed ?? '정보 없음' }}<template v-if="activeCity.windSpeed != null"> m/s</template></dd>
+              <dd>{{ activeCity.windSpeed ?? '정보 없음' }}<template v-if="hasValue(activeCity.windSpeed)"> m/s</template></dd>
             </div>
           </dl>
 
@@ -295,37 +312,46 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
       <p v-else class="timeline-state" role="status">{{ isForecastLoading ? '실시간 예보를 동기화하고 있습니다.' : forecastError || '조회된 도시가 없어 예보를 표시하지 않습니다.' }}</p>
     </section>
 
-    <section class="atlas-command-bar" aria-label="도시 검색과 온도 단위 설정">
-      <SearchBar
-        :current-query="searchQuery"
-        :is-loading="isSearching || isInitializing"
-        :error-message="commandError"
-        :status-message="commandStatus"
-        @update-query="updateSearchQuery"
-        @search-city="handleCitySearch"
-      />
-      <UnitToggler />
-    </section>
-
     <section class="city-journal" aria-labelledby="city-index-title">
       <header class="city-journal-heading">
         <div>
           <p>CITY INDEX</p>
           <h2 id="city-index-title">도시 아카이브</h2>
         </div>
-        <div v-if="weatherList.length" class="city-meta" aria-label="도시 관측 요약">
-          <span
-            ><b>{{ String(weatherList.length).padStart(2, '0') }}</b> CITIES</span
-          >
-          <span v-if="averageTemperature !== null"
-            >AVG <b>{{ formatTemperature(averageTemperature) }}</b></span
-          >
-          <span v-if="warmestCity"
-            >WARMEST <b>{{ warmestCity.name }} {{ formatTemperature(warmestCity.temp) }}</b></span
-          >
+        <div class="city-heading-actions">
+          <div v-if="weatherList.length" class="city-meta" aria-label="도시 관측 요약">
+            <span
+              ><b>{{ String(weatherList.length).padStart(2, '0') }}</b> CITIES</span
+            >
+            <span v-if="averageTemperature !== null"
+              >AVG <b>{{ formatTemperature(averageTemperature) }}</b></span
+            >
+            <span v-if="warmestCity"
+              >WARMEST <b>{{ warmestCity.name }} {{ formatTemperature(warmestCity.temp) }}</b></span
+            >
+          </div>
+          <span v-else class="city-meta">NO LIVE CITIES</span>
+          <button ref="addLocationButton" type="button" class="add-location-button" :aria-expanded="isLocationPanelOpen" aria-controls="location-search-panel" @click="toggleLocationPanel">
+            {{ isLocationPanelOpen ? '도시 추가 닫기' : '+ 도시 추가' }}
+          </button>
         </div>
-        <span v-else class="city-meta">NO LIVE CITIES</span>
       </header>
+
+      <p class="location-announcer" role="status" aria-live="polite">{{ locationStatus }}</p>
+      <Transition name="location-panel">
+        <div v-if="isLocationPanelOpen" id="location-search-panel" class="location-panel-shell">
+          <SearchBar
+            ref="locationSearch"
+            :model-value="locationQuery"
+            :loading="isSearching || isInitializing"
+            :error-message="locationError"
+            :status-message="locationStatus"
+            @update:model-value="updateLocationQuery"
+            @submit="handleLocationSearch"
+            @close="closeLocationPanel"
+          />
+        </div>
+      </Transition>
 
       <div class="list-controls">
         <div class="filter-groups">
@@ -383,7 +409,7 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
       </div>
       <div v-else class="city-empty city-empty-full">
         <p>LIVE CITY ARCHIVE</p>
-        <strong>아직 불러온 실시간 도시가 없습니다.</strong><span>위 검색창에서 도시를 조회하거나 API 환경변수를 확인해 주세요.</span>
+        <strong>아직 불러온 실시간 도시가 없습니다.</strong><span>관측 지점 추가 버튼으로 도시를 조회하거나 API 환경변수를 확인해 주세요.</span>
       </div>
     </section>
 
@@ -458,8 +484,8 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   margin: 0;
   font-size: clamp(3.25rem, 7.2vw, 7.5rem);
   font-weight: 620;
-  letter-spacing: -0.075em;
-  line-height: 0.78;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
   white-space: nowrap;
 }
 .atlas-title-line.is-medium h1 {
@@ -505,7 +531,7 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
 .atlas-metrics dt {
   margin-bottom: 0.35rem;
   color: rgba(242, 239, 231, 0.64);
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -517,7 +543,7 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
 .atlas-navigation {
   position: absolute;
   right: clamp(1.25rem, 5vw, 5rem);
-  top: clamp(7.8rem, 13vh, 9.5rem);
+  top: clamp(9rem, 16vh, 12rem);
   display: grid;
   grid-template-columns: 2.25rem auto 2.25rem;
   align-items: center;
@@ -578,30 +604,6 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   max-width: 34rem;
   margin-top: 2rem;
   color: rgba(242, 239, 231, 0.7);
-}
-.atlas-command-bar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 2rem;
-  padding: 1.2rem clamp(1.25rem, 5vw, 5rem) 1.6rem;
-  border-top: 1px solid rgba(242, 239, 231, 0.35);
-  border-bottom: 1px solid rgba(242, 239, 231, 0.22);
-  background: #1b201e;
-}
-.atlas-command-bar :deep(.unit-toggler) {
-  padding-top: 0.1rem;
-}
-.atlas-command-bar :deep(.unit-label) {
-  color: rgba(242, 239, 231, 0.6);
-}
-.atlas-command-bar :deep(.unit-button) {
-  border-color: rgba(242, 239, 231, 0.45);
-  color: rgba(242, 239, 231, 0.5);
-  background: transparent;
-}
-.atlas-command-bar :deep(.unit-button .active) {
-  color: #fff;
 }
 .atlas-scroll-cue {
   position: absolute;
@@ -722,6 +724,57 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
 }
 .city-meta b {
   color: var(--atlas-ink);
+}
+.city-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.75rem;
+}
+.add-location-button {
+  padding: 0.35rem 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  color: var(--atlas-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.add-location-button:hover {
+  color: var(--atlas-accent);
+}
+.add-location-button:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 4px;
+}
+.location-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.location-panel-shell {
+  margin-top: 1.25rem;
+}
+.location-panel-enter-active,
+.location-panel-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+.location-panel-enter-from,
+.location-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 .list-controls {
   display: flex;
@@ -936,14 +989,6 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   .atlas-city-rail {
     display: none;
   }
-  .atlas-command-bar {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-    padding: 0.8rem 1rem 1.05rem;
-  }
-  .atlas-command-bar :deep(.unit-toggler) {
-    justify-content: flex-end;
-  }
   .atlas-scroll-cue {
     right: auto;
     bottom: 0.75rem;
@@ -1003,6 +1048,14 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   .city-meta {
     justify-content: flex-start;
   }
+  .city-heading-actions {
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  .location-panel-shell {
+    margin-top: 1rem;
+  }
   .city-index-caption {
     right: 1.2rem;
     bottom: 1.2rem;
@@ -1028,9 +1081,6 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   .atlas-scroll-cue {
     bottom: 0.75rem;
   }
-  .atlas-command-bar {
-    padding-bottom: 0.8rem;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -1044,6 +1094,10 @@ onBeforeUnmount(() => clearTimeout(forecastTimer))
   }
   .atlas-scroll-line {
     animation: none;
+  }
+  .location-panel-enter-active,
+  .location-panel-leave-active {
+    transition: none;
   }
 }
 </style>

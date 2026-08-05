@@ -2,36 +2,59 @@
 import { ref } from 'vue'
 import PropsEmitsChild from './PropsEmitsChild.vue'
 
-// 1. 상위 컴포넌트의 로컬 반응형 상태 정의
-const message = ref('Parent 초기 메시지')
+const selectedCity = ref('서울')
+const requestLog = ref('자식 컴포넌트의 요청을 기다리고 있습니다.')
 
-// 2. 하위 컴포넌트의 커스텀 이벤트를 수신했을 때 실행될 핸들러 함수
-// 인자(newValue)로 하위 컴포넌트가 보낸 페이로드가 자동 주입됩니다.
-const handleUpdateRequest = (newValue) => {
-  message.value = newValue
+const handleRefreshRequest = (city) => {
+  requestLog.value = `${city}의 관측 정보 갱신 요청을 받았습니다.`
 }
 </script>
 
 <template>
   <div class="practice-section">
-    <h2>Props & Emits</h2>
-    <div class="parent-container">
-      <h2>상위 컴포넌트 (Parent)</h2>
-      <p>
-        현재 로컬 데이터(State): <strong>{{ message }}</strong>
-      </p>
-      <br />
-      <PropsEmitsChild :parent-data="message" @update-request="handleUpdateRequest" />
+    <h2>Props로 전달하고 Emits로 요청하기</h2>
+    <div class="parent-flow">
+      <section>
+        <p class="flow-label">PARENT STATE</p>
+        <select v-model="selectedCity" aria-label="관측 도시">
+          <option>서울</option>
+          <option>부산</option>
+          <option>제주</option>
+        </select>
+        <p class="request-log" aria-live="polite">{{ requestLog }}</p>
+      </section>
+      <PropsEmitsChild :city="selectedCity" @refresh-request="handleRefreshRequest" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.parent-container {
-  border: 2px solid #2ecc71;
-  padding: 20px;
-  background-color: #f8f9fa;
-  margin: 0 auto;
-  border-radius: 8px;
+.parent-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem;
+}
+
+.parent-flow > section {
+  padding: 1rem;
+  border: 1px solid var(--atlas-line);
+}
+
+.flow-label {
+  color: var(--atlas-accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.request-log {
+  color: var(--atlas-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 600px) {
+  .parent-flow {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

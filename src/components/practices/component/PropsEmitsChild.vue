@@ -1,38 +1,58 @@
 <script setup>
-// 1. 상위 컴포넌트로부터 주입받을 데이터의 자료형 및 필수 여부 정의
 defineProps({
-  parentData: {
+  city: {
     type: String,
     required: true,
   },
 })
 
-// 2. 상위 컴포넌트로 송신할 커스텀 이벤트 식별자 등록
-const emit = defineEmits(['update-request'])
-
-// 3. 내부 이벤트 발생 시 페이로드를 실어 상위로 이벤트를 디스패치하는 함수
-const sendNotification = () => {
-  const payload = 'Child에서 가공한 새로운 데이터'
-  emit('update-request', payload)
-}
+const emit = defineEmits(['refresh-request'])
 </script>
 
 <template>
-  <div class="child-container">
-    <h2>하위 컴포넌트 (Child)</h2>
-    <p>
-      수신된 Props 데이터: <strong>{{ parentData }}</strong>
-    </p>
-    <br />
-    <button @click="sendNotification">상위 컴포넌트로 갱신 요청 (Emit)</button>
-  </div>
+  <section class="child-container">
+    <p>CHILD COMPONENT · PROP</p>
+    <strong>{{ city }}</strong>
+    <span>부모가 선택한 도시를 읽기 전용으로 표시합니다.</span>
+    <button type="button" @click="emit('refresh-request', city)">관측 갱신 요청 · EMIT</button>
+  </section>
 </template>
 
 <style scoped>
 .child-container {
-  border: 2px dashed #3498db;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 6px;
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+  border: 1px solid var(--atlas-ink);
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+}
+
+p,
+strong,
+span {
+  margin: 0;
+}
+
+p {
+  color: #b8c9cc;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+strong {
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+span {
+  color: #b8c9cc;
+  font-size: 0.78rem;
+}
+
+button {
+  justify-self: start;
+  border-color: #8a8f8c;
+  color: var(--atlas-paper-soft);
 }
 </style>

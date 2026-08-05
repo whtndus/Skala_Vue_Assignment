@@ -21,7 +21,7 @@
 }
 
 :root {
-  --color-background: #e9e7e1;
+  --color-background: #f7f6f2;
   --color-background-soft: #f4f2ec;
   --color-background-mute: #dedbd3;
 
@@ -31,7 +31,7 @@
   --color-heading: #1e211f;
   --color-text: #4e514d;
 
-  --atlas-paper: #e9e7e1;
+  --atlas-paper: #f7f6f2;
   --atlas-paper-soft: #f3f1eb;
   --atlas-ink: #202320;
   --atlas-muted: #686d69;

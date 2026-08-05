@@ -131,7 +131,7 @@ button:hover {
   border-radius: 1px;
   color: var(--atlas-paper-soft);
   background: #2d302e;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
 }
 .console span {

@@ -130,7 +130,7 @@ const openDetail = () => {
   border-bottom: 1px solid currentColor;
   color: inherit;
   background: transparent;
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.09em;
   cursor: pointer;

@@ -21,37 +21,36 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 .unit-toggler {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  flex: 0 0 auto;
 }
 
 .unit-label {
-  color: var(--atlas-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .unit-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  min-height: 36px;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--atlas-line);
+  gap: 0.35rem;
+  min-height: 32px;
+  padding: 0.25rem 0;
+  border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--atlas-muted);
+  color: var(--unit-control-muted, var(--atlas-muted));
   cursor: pointer;
-  box-shadow: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s,
-    transform 0.2s;
+  transition: color 160ms ease;
 }
 
 .unit-button:hover {
-  border-color: currentColor;
-  box-shadow: none;
-  transform: translateY(-1px);
+  color: var(--unit-control-color, var(--atlas-ink));
 }
 
 .unit-button:focus-visible {
@@ -60,16 +59,20 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 }
 
 .unit-button span {
-  font-size: 0.82rem;
-  font-weight: 600;
+  padding-bottom: 0.1rem;
+  border-bottom: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 650;
 }
 
 .unit-button .active {
-  color: var(--atlas-ink);
+  border-bottom-color: currentColor;
+  color: var(--unit-control-color, var(--atlas-ink));
   font-weight: 800;
 }
 
 .unit-button .divider {
-  color: var(--atlas-line);
+  border-bottom: 0;
+  color: var(--unit-control-divider, var(--atlas-line));
 }
 </style>

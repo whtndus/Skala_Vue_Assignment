@@ -75,8 +75,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .map-module {
-  padding: clamp(3rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
-  border-bottom: 1px solid var(--atlas-line);
+  min-width: 0;
 }
 .map-module header {
   display: flex;
@@ -96,7 +95,7 @@ onBeforeUnmount(() => {
 }
 .map-module h2 {
   margin: 0;
-  font-size: clamp(1.8rem, 3.4vw, 3.8rem);
+  font-size: clamp(1.8rem, 3vw, 3rem);
   font-weight: 570;
   letter-spacing: -0.055em;
   line-height: 0.95;
@@ -151,9 +150,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1px rgba(27, 31, 29, 0.65);
 }
 @media (max-width: 640px) {
-  .map-module {
-    padding: 2.75rem 1rem;
-  }
   .map-module header {
     align-items: flex-start;
     flex-direction: column;

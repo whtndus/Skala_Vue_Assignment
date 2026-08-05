@@ -65,7 +65,7 @@ output span {
 }
 code {
   overflow-wrap: anywhere;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   color: var(--atlas-ink);
 }
 @media (max-width: 620px) {

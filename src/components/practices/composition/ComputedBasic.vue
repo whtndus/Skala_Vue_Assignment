@@ -3,26 +3,60 @@ import { computed, ref } from 'vue'
 
 const count = ref(0)
 const unrelatedCount = ref(0)
+let methodRuns = 0
+let computedRuns = 0
 
-const getDoubleByMethod = () => {
-  console.log('일반 함수가 다시 실행됐습니다.')
-  return count.value * 2
-}
-
-const doubleCount = computed(() => {
-  console.log('computed가 count 변경을 감지해 다시 계산했습니다.')
-  return count.value * 2
-})
+const getDoubleByMethod = () => ({ value: count.value * 2, run: ++methodRuns })
+const doubleCount = computed(() => ({ value: count.value * 2, run: ++computedRuns }))
 </script>
 
 <template>
   <div class="practice-section">
     <h2>computed() 캐싱 비교</h2>
-    <p>count: {{ count }} · 관계없는 값: {{ unrelatedCount }}</p>
-    <button @click="count++">count 증가</button>&nbsp;
-    <button @click="unrelatedCount++">관계없는 값 증가</button>
-    <p>일반 함수 결과: {{ getDoubleByMethod() }}</p>
-    <p>computed 결과: {{ doubleCount }}</p>
-    <small>관계없는 값을 변경한 뒤 브라우저 콘솔에서 실행 횟수 차이를 확인해 보세요.</small>
+    <p>관계없는 상태만 변경해도 메서드는 다시 호출되지만 computed는 의존 값이 바뀔 때만 재계산됩니다.</p>
+    <div class="control-row">
+      <button type="button" @click="count++">의존 값 증가 · {{ count }}</button>
+      <button type="button" @click="unrelatedCount++">관계없는 값 증가 · {{ unrelatedCount }}</button>
+    </div>
+    <div class="comparison-grid">
+      <p>method <strong>{{ getDoubleByMethod().value }}</strong><small>실행 #{{ getDoubleByMethod().run }}</small></p>
+      <p>computed <strong>{{ doubleCount.value }}</strong><small>계산 #{{ doubleCount.run }}</small></p>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1rem;
+  border-top: 1px solid var(--atlas-line);
+  border-bottom: 1px solid var(--atlas-line);
+}
+
+.comparison-grid p {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 1rem;
+}
+
+.comparison-grid p + p {
+  border-left: 1px solid var(--atlas-line);
+}
+
+.comparison-grid strong {
+  font-size: 2rem;
+  font-weight: 450;
+}
+
+.comparison-grid small {
+  color: var(--atlas-muted);
+}
+</style>

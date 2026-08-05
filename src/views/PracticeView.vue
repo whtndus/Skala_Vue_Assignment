@@ -38,10 +38,20 @@ import SlotDefaultParent from '@/components/practices/component/SlotDefaultParen
 import SlotNamedParent from '@/components/practices/component/SlotNamedParent.vue'
 import SlotScopedParent from '@/components/practices/component/SlotScopedParent.vue'
 import EcmaScript from '@/components/practices/library/EcmaScript.vue'
+import ToolingMission from '@/components/practices/library/ToolingMission.vue'
 import StoreCounter from '@/components/practices/library/StoreCounter.vue'
 import AxiosWeather from '@/components/practices/library/AxiosWeather.vue'
 import AxiosJson from '@/components/practices/library/AxiosJson.vue'
 import ElementPlusPractice from '@/components/practices/library/ElementPlus.vue'
+import DirectiveWeatherMission from '@/components/practices/missions/DirectiveWeatherMission.vue'
+import EventQueueMission from '@/components/practices/missions/EventQueueMission.vue'
+import WeatherAlertMission from '@/components/practices/missions/WeatherAlertMission.vue'
+import ForecastAnalysisMission from '@/components/practices/missions/ForecastAnalysisMission.vue'
+import AutoObservationMission from '@/components/practices/missions/AutoObservationMission.vue'
+import WeatherCardMission from '@/components/practices/missions/WeatherCardMission.vue'
+import ObservationSlotMission from '@/components/practices/missions/ObservationSlotMission.vue'
+import RecentCitiesMission from '@/components/practices/missions/RecentCitiesMission.vue'
+import ApiSearchMission from '@/components/practices/missions/ApiSearchMission.vue'
 
 const practiceSections = [
   {
@@ -75,6 +85,7 @@ const practiceSections = [
       { label: 'v-once', component: VueVonce },
       { label: 'v-memo', component: VueVmemo },
     ],
+    mission: { label: '미니 날씨 현황판', component: DirectiveWeatherMission },
   },
   {
     id: 'event-handling',
@@ -86,6 +97,7 @@ const practiceSections = [
       { label: 'Event Object', component: EventObject },
       { label: 'Event Modifier', component: EventModifier },
     ],
+    mission: { label: '관측 도시 대기열', component: EventQueueMission },
   },
   {
     id: 'form-handling',
@@ -98,6 +110,7 @@ const practiceSections = [
       { label: 'v-model Modifiers', component: ModelModifier },
       { label: '검색어 입력과 부모·자식 동기화', component: SearchBindingPractice },
     ],
+    mission: { label: '날씨 알림 설정', component: WeatherAlertMission },
   },
   {
     id: 'vue-style',
@@ -129,6 +142,7 @@ const practiceSections = [
       { label: 'watch() reactive 데이터', component: WatchersReactive },
       { label: 'watchEffect() Example', component: WatchersWatchEffect },
     ],
+    mission: { label: '예보 분석 패널', component: ForecastAnalysisMission },
   },
   {
     id: 'component-lifecycle',
@@ -136,6 +150,7 @@ const practiceSections = [
     title: '컴포넌트 생명주기',
     description: '컴포넌트가 생성되고 갱신되며 사라지는 생명주기를 관찰합니다.',
     lessons: [{ label: 'Lifecycle Hook Example', component: LifecycleParent }],
+    mission: { label: '자동 관측 시뮬레이터', component: AutoObservationMission },
   },
   {
     id: 'props-emits',
@@ -143,6 +158,7 @@ const practiceSections = [
     title: 'Props와 Emits',
     description: '부모와 자식 컴포넌트가 데이터와 이벤트를 주고받는 흐름을 실습합니다.',
     lessons: [{ label: 'Props & Emits Example', component: PropsEmitsParent }],
+    mission: { label: '부모가 관리하는 날씨 카드', component: WeatherCardMission },
   },
   {
     id: 'component-slot',
@@ -154,6 +170,7 @@ const practiceSections = [
       { label: 'Named Slot Example', component: SlotNamedParent },
       { label: 'Scoped Slot Example', component: SlotScopedParent },
     ],
+    mission: { label: '재사용 가능한 관측 패널', component: ObservationSlotMission },
   },
   {
     id: 'pinia-store',
@@ -161,6 +178,7 @@ const practiceSections = [
     title: 'Pinia 스토어',
     description: '컴포넌트 밖의 전역 상태를 만들고 여러 화면에서 공유합니다.',
     lessons: [{ label: 'Pinia Counter Store', component: StoreCounter }],
+    mission: { label: '최근 조회 도시 스토어', component: RecentCitiesMission },
   },
   {
     id: 'axios',
@@ -171,6 +189,7 @@ const practiceSections = [
       { label: '날씨 API 요청', component: AxiosWeather },
       { label: 'JSON 데이터 요청', component: AxiosJson },
     ],
+    mission: { label: '도시 날씨 요청 상태 머신', component: ApiSearchMission },
   },
   {
     id: 'element-plus',
@@ -185,6 +204,13 @@ const practiceSections = [
     title: 'Modern JavaScript',
     description: '배열·객체 가공, 안전한 기본값 처리, async/await 연쇄 호출을 세 가지 과제로 검증합니다.',
     lessons: [{ label: 'ES6+ 실무 검증 과제 1·2·3', component: EcmaScript }],
+  },
+  {
+    id: 'tooling-build',
+    kicker: 'TOOLING / BUILD',
+    title: '코드 품질과 배포 환경',
+    description: 'ESLint, Prettier, Vite mode와 환경별 빌드 과정을 예제 코드와 실제 설정으로 확인합니다.',
+    lessons: [{ label: 'ESLint · Prettier · Env · Vite 빌드 미션', component: ToolingMission }],
   },
 ]
 
@@ -238,7 +264,7 @@ const moveSection = (direction) => {
               <span class="navigation-number">{{ String(index + 1).padStart(2, '0') }}</span>
               <span class="navigation-copy">
                 <strong>{{ section.title }}</strong>
-                <small>{{ section.lessons.length }}개 실습</small>
+                <small>{{ section.lessons.length }}개 실습{{ section.mission ? ' + 미션' : '' }}</small>
               </span>
             </button>
           </nav>
@@ -252,25 +278,36 @@ const moveSection = (direction) => {
               <li v-for="lesson in selectedSection.lessons" :key="lesson.label">
                 {{ lesson.label }}
               </li>
+              <li v-if="selectedSection.mission" class="mission-list-item">MISSION · {{ selectedSection.mission.label }}</li>
             </ul>
           </div>
         </aside>
       </div>
 
       <main class="practice-content">
-        <section v-for="(section, index) in practiceSections" v-show="selectedSectionId === section.id" :key="section.id" class="practice-chapter" :aria-labelledby="`${section.id}-title`">
-          <header class="chapter-heading">
-            <p>{{ String(index + 1).padStart(2, '0') }} / {{ section.kicker }}</p>
-            <h2 :id="`${section.id}-title`">{{ section.title }}</h2>
-            <span>{{ section.description }}</span>
-          </header>
+        <template v-for="(section, index) in practiceSections" :key="section.id">
+          <section v-if="selectedSectionId === section.id" class="practice-chapter" :aria-labelledby="`${section.id}-title`">
+            <header class="chapter-heading">
+              <p>{{ String(index + 1).padStart(2, '0') }} / {{ section.kicker }}</p>
+              <h2 :id="`${section.id}-title`">{{ section.title }}</h2>
+              <span>{{ section.description }}</span>
+            </header>
 
-          <div v-for="lesson in section.lessons" :key="lesson.label" class="lesson-block">
-            <div class="lesson-label">{{ lesson.label }}</div>
-            <div class="specimen-label">LIVE SPECIMEN</div>
-            <div class="specimen-surface"><component :is="lesson.component" /></div>
-          </div>
-        </section>
+            <div v-for="lesson in section.lessons" :key="lesson.label" class="lesson-block">
+              <div class="lesson-label">{{ lesson.label }}</div>
+              <div class="specimen-label">LIVE SPECIMEN</div>
+              <div class="specimen-surface"><component :is="lesson.component" /></div>
+            </div>
+
+            <div v-if="section.mission" class="chapter-mission">
+              <div class="mission-heading">
+                <span>CHAPTER MISSION</span>
+                <strong>{{ section.mission.label }}</strong>
+              </div>
+              <div class="mission-surface"><component :is="section.mission.component" /></div>
+            </div>
+          </section>
+        </template>
 
         <footer class="chapter-controls" aria-label="실습 단계 이동">
           <button type="button" class="chapter-button secondary" :disabled="selectedSectionIndex === 0" @click="moveSection(-1)">← 이전 실습</button>
@@ -716,7 +753,7 @@ const moveSection = (direction) => {
 .practice-heading h1 {
   margin: 0.45rem 0 0.75rem;
   color: var(--atlas-ink);
-  font-size: clamp(2.8rem, 6vw, 6rem);
+  font-size: clamp(2rem, 4vw, 4rem);
   font-weight: 560;
   letter-spacing: -0.065em;
   line-height: 0.95;
@@ -929,7 +966,7 @@ const moveSection = (direction) => {
 .specimen-surface :deep(code),
 .specimen-surface :deep(pre),
 .specimen-surface :deep(output) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-family: var(--font-mono);
 }
 
 .lesson-block :deep(.el-card) {
@@ -984,6 +1021,54 @@ const moveSection = (direction) => {
   border-color: var(--atlas-accent);
   color: #fff;
   background: var(--atlas-accent);
+}
+
+.lesson-list .mission-list-item {
+  color: var(--atlas-ink);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.lesson-list .mission-list-item::before {
+  height: 6px;
+  background: var(--atlas-ink);
+}
+
+.chapter-mission {
+  margin-top: clamp(3.5rem, 7vw, 6rem);
+  border-top: 1px solid var(--atlas-ink);
+}
+
+.mission-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--atlas-paper-soft);
+  background: var(--atlas-ink);
+}
+
+.mission-heading span {
+  color: #b8c9cc;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.mission-heading strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.mission-surface {
+  padding: clamp(1.1rem, 3vw, 2.25rem);
+  border-right: 1px solid var(--atlas-line);
+  border-bottom: 1px solid var(--atlas-line);
+  border-left: 1px solid var(--atlas-line);
+  background: var(--atlas-paper-soft);
 }
 
 .practice-context {
@@ -1086,7 +1171,7 @@ const moveSection = (direction) => {
   }
 
   .practice-heading h1 {
-    font-size: clamp(2.65rem, 14vw, 4.25rem);
+    font-size: clamp(2rem, 9vw, 3rem);
   }
 
   .practice-sidebar {

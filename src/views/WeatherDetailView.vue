@@ -3,13 +3,12 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useTemperature } from '@/composables/useTemperature'
-import { formatCityTime } from '@/services/openWeatherApi'
+import { fetchForecastByCoordinates, formatCityTime, getWeatherErrorMessage } from '@/services/openWeatherApi'
 import { useWeatherStore } from '@/stores/weatherStore'
+import { getWeatherAtlasImage } from '@/utils/weatherAtlas'
+import FiveDayWeatherJournal from '@/components/exercise/FiveDayWeatherJournal.vue'
 import WeatherMap from '@/components/exercise/WeatherMap.vue'
-import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
-import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
-import cloudCityImage from '@/assets/weather-atlas/cloud-city.jpg'
-import snowCityImage from '@/assets/weather-atlas/snow-city.jpg'
+import WeatherOutfit from '@/components/exercise/WeatherOutfit.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,20 +20,20 @@ const city = computed(() => weatherStore.findWeatherById(String(route.params.cit
 const homeRoute = computed(() => ({
   name: 'weather-home',
   query: {
-    ...(typeof route.query.q === 'string' ? { q: route.query.q } : {}),
     ...(typeof route.query.status === 'string' ? { status: route.query.status } : {}),
     ...(typeof route.query.sort === 'string' ? { sort: route.query.sort } : {}),
     ...(route.query.favorite === '1' ? { favorite: '1' } : {}),
   },
 }))
 
-const detailImage = computed(() => ({ 맑음: clearCityImage, 비: rainCityImage, 구름: cloudCityImage, 눈: snowCityImage })[city.value?.status] || cloudCityImage)
+const detailImage = computed(() => getWeatherAtlasImage(city.value))
 const detailHeadline = computed(
   () => ({ 맑음: 'CLEAR ABOVE THE CITY', 비: 'RAIN AFTER MIDNIGHT', 구름: 'CLOUDS OVER THE WATER', 눈: 'WHITE AIR, HIGH GROUND' })[city.value?.status] || 'WEATHER ACROSS THE CITY',
 )
-const visibility = computed(() => (city.value?.visibilityMeters == null ? null : `${Number(city.value.visibilityMeters / 1000).toFixed(city.value.visibilityMeters % 1000 ? 1 : 0)} km`))
+const isMissing = (value) => value === null || value === undefined
+const visibility = computed(() => (isMissing(city.value?.visibilityMeters) ? null : `${Number(city.value.visibilityMeters / 1000).toFixed(city.value.visibilityMeters % 1000 ? 1 : 0)} km`))
 const timezoneLabel = computed(() => {
-  if (city.value?.timezoneOffset == null) return null
+  if (isMissing(city.value?.timezoneOffset)) return null
   const offset = Number(city.value.timezoneOffset)
   const sign = offset >= 0 ? '+' : '-'
   const hours = String(Math.floor(Math.abs(offset) / 3600)).padStart(2, '0')
@@ -42,15 +41,15 @@ const timezoneLabel = computed(() => {
   return `UTC${sign}${hours}:${minutes}`
 })
 const observedTime = computed(() => formatCityTime(city.value?.observedTimestamp, city.value?.timezoneOffset, { year: 'numeric', month: 'long', day: 'numeric' }))
-const valueOrNull = (value, unit = '') => (value == null ? null : `${value}${unit}`)
+const valueOrNull = (value, unit = '') => (isMissing(value) ? null : `${value}${unit}`)
 const observationRows = computed(() =>
   [
     ['국가', city.value?.country || null],
     ['주·행정구역', city.value?.state || null],
-    ['현재 기온', city.value?.temp == null ? null : formatTemperature(city.value.temp)],
-    ['체감 온도', city.value?.feelsLike == null ? null : formatTemperature(city.value.feelsLike)],
-    ['최저 기온', city.value?.tempMin == null ? null : formatTemperature(city.value.tempMin)],
-    ['최고 기온', city.value?.tempMax == null ? null : formatTemperature(city.value.tempMax)],
+    ['현재 기온', isMissing(city.value?.temp) ? null : formatTemperature(city.value.temp)],
+    ['체감 온도', isMissing(city.value?.feelsLike) ? null : formatTemperature(city.value.feelsLike)],
+    ['최저 기온', isMissing(city.value?.tempMin) ? null : formatTemperature(city.value.tempMin)],
+    ['최고 기온', isMissing(city.value?.tempMax) ? null : formatTemperature(city.value.tempMax)],
     ['습도', valueOrNull(city.value?.humidity, '%')],
     ['구름량', valueOrNull(city.value?.cloudiness, '%')],
     ['가시거리', visibility.value],
@@ -74,6 +73,34 @@ const solarRows = computed(() =>
     ['관측 시간', observedTime.value || city.value?.observedAt || null],
     ['시간대', timezoneLabel.value],
   ].filter(([, value]) => value !== null),
+)
+
+const forecastReadings = ref([])
+const isForecastLoading = ref(false)
+const forecastError = ref('')
+let forecastRequestId = 0
+
+watch(
+  () => [city.value?.coordinates?.lat, city.value?.coordinates?.lon],
+  async ([latitude, longitude]) => {
+    const requestId = ++forecastRequestId
+    forecastReadings.value = []
+    forecastError.value = ''
+    isForecastLoading.value = false
+
+    if (latitude === null || latitude === undefined || longitude === null || longitude === undefined || !Number.isFinite(Number(latitude)) || !Number.isFinite(Number(longitude))) return
+
+    isForecastLoading.value = true
+    try {
+      const readings = await fetchForecastByCoordinates({ lat: latitude, lon: longitude })
+      if (requestId === forecastRequestId) forecastReadings.value = readings
+    } catch (error) {
+      if (requestId === forecastRequestId) forecastError.value = getWeatherErrorMessage(error)
+    } finally {
+      if (requestId === forecastRequestId) isForecastLoading.value = false
+    }
+  },
+  { immediate: true },
 )
 
 let detailRequestId = 0
@@ -190,10 +217,27 @@ watch(
         </div>
       </section>
 
-      <WeatherMap :latitude="city.coordinates?.lat" :longitude="city.coordinates?.lon" :city-name="city.name" />
+      <section class="location-style-section" aria-label="위치와 오늘의 옷차림">
+        <div class="location-style-grid">
+          <WeatherMap :latitude="city.coordinates?.lat" :longitude="city.coordinates?.lon" :city-name="city.name" />
+          <WeatherOutfit
+            :temperature="city.temp"
+            :feels-like="city.feelsLike"
+            :status="city.status"
+            :description="city.description"
+            :wind-speed="city.windSpeed"
+            :humidity="city.humidity"
+            :precipitation="city.precipitation"
+            :precipitation-type="city.precipitationType"
+          />
+        </div>
+      </section>
+
+      <FiveDayWeatherJournal :readings="forecastReadings" :city-name="city.name" :loading="isForecastLoading" :error-message="forecastError" />
 
       <nav class="detail-navigation" aria-label="상세 페이지 이동">
-        <RouterLink :to="homeRoute">← 도시 아카이브로 돌아가기</RouterLink><RouterLink :to="{ ...homeRoute, hash: '#forecast' }">향후 예보 보기 ↗</RouterLink>
+        <RouterLink :to="homeRoute">← 도시 아카이브로 돌아가기</RouterLink>
+        <a href="#five-day-journal">5일 예보 다시 보기 ↑</a>
       </nav>
     </template>
 
@@ -378,6 +422,15 @@ watch(
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.location-style-section {
+  padding: clamp(3rem, 5vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
+  border-bottom: 1px solid var(--atlas-line);
+}
+.location-style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 4rem);
+}
 .detail-navigation {
   display: flex;
   justify-content: space-between;
@@ -432,6 +485,12 @@ watch(
     grid-column: 1 / -1;
   }
 }
+@media (max-width: 900px) {
+  .location-style-grid {
+    grid-template-columns: 1fr;
+    gap: 2.75rem;
+  }
+}
 @media (max-width: 700px) {
   .detail-hero {
     height: 66svh;
@@ -475,6 +534,9 @@ watch(
   }
   .observation-panel:last-child {
     grid-column: auto;
+  }
+  .location-style-section {
+    padding: 2.75rem 1rem;
   }
   .detail-navigation {
     align-items: flex-start;

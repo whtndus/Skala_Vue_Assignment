@@ -1,13 +1,16 @@
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import UnitToggler from '@/components/exercise/UnitToggler.vue'
 
 const route = useRoute()
+const showUnitToggler = computed(() => ['weather-home', 'weather-detail'].includes(String(route.name)))
 </script>
 
 <template>
   <div class="app-shell" :class="{ 'atlas-route': route.name === 'weather-home' }">
     <header class="site-header">
-      <h1>WEATHER / ATLAS</h1>
+      <h1>WEATHER</h1>
 
       <div class="header-controls">
         <nav class="navigation" aria-label="주요 메뉴">
@@ -15,6 +18,7 @@ const route = useRoute()
           <RouterLink to="/practice">Vue 실습</RouterLink>
           <RouterLink to="/about">서비스 소개</RouterLink>
         </nav>
+        <UnitToggler v-if="showUnitToggler" />
       </div>
     </header>
 
@@ -31,6 +35,9 @@ const route = useRoute()
 }
 
 .site-header {
+  --unit-control-color: #1e211f;
+  --unit-control-muted: #6c706c;
+  --unit-control-divider: #aaa8a1;
   position: sticky;
   z-index: 50;
   top: 0;
@@ -42,13 +49,13 @@ const route = useRoute()
   margin: 0 auto;
   padding: 1.25rem max(1.5rem, calc((100vw - 1280px) / 2));
   border-bottom: 1px solid rgba(27, 30, 29, 0.2);
-  background: rgba(233, 231, 225, 0.96);
+  background: rgba(247, 246, 242, 0.96);
 }
 
 .site-header h1 {
   margin: 0;
   color: #1e211f;
-  font-size: 0.8rem;
+  font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.16em;
 }
@@ -64,7 +71,7 @@ const route = useRoute()
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
 }
 
@@ -98,6 +105,9 @@ const route = useRoute()
 }
 
 .atlas-route .site-header {
+  --unit-control-color: #fff;
+  --unit-control-muted: rgba(255, 255, 255, 0.62);
+  --unit-control-divider: rgba(255, 255, 255, 0.35);
   position: fixed;
   z-index: 50;
   top: 0;
@@ -122,6 +132,8 @@ const route = useRoute()
   }
 
   .navigation {
+    flex: 1 1 auto;
+    min-width: 0;
     width: 100%;
     justify-content: flex-start;
     gap: 1rem;
@@ -129,7 +141,7 @@ const route = useRoute()
   }
 
   .navigation a {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     text-align: center;
   }
 

@@ -34,11 +34,18 @@
         <h2>Vue 학습 요소</h2>
       </div>
       <ul>
-        <li>Composition API와 <code>&lt;script setup&gt;</code></li>
-        <li>Props, Emits를 활용한 컴포넌트 통신</li>
-        <li>Named Slot과 Scoped Slot을 활용한 UI 조립</li>
-        <li>Composable로 분리한 검색 상태와 파생 데이터</li>
-        <li>Vue Router의 Lazy Loading과 동적 경로 매칭</li>
+        <li>
+          <span class="technology-entry">
+            <strong><code>ref</code> · <code>computed</code> · <code>watch</code></strong>
+            <span>관측 도시와 필터·정렬 상태 구성</span>
+          </span>
+        </li>
+        <li>Pinia로 실시간 날씨, 즐겨찾기, 온도 단위 설정을 역할별로 분리</li>
+        <li>Props와 Emits로 검색 폼, 도시 행, 단위 전환 컴포넌트 연결</li>
+        <li>Vue Router의 동적 도시 경로, query 동기화, navigation guard 활용</li>
+        <li>Axios와 OpenWeather API를 이용한 현재 관측·예보 데이터 비동기 처리</li>
+        <li>컴포넌트 생명주기에 맞춘 Leaflet 지도 생성·좌표 갱신·인스턴스 해제</li>
+        <li>localStorage를 활용한 최소 즐겨찾기 정보 저장과 legacy 데이터 복구</li>
       </ul>
     </section>
 
@@ -186,7 +193,7 @@
 .about-heading h1 {
   margin: 0 0 1rem;
   color: var(--atlas-ink);
-  font-size: clamp(3rem, 7vw, 7rem);
+  font-size: clamp(2rem, 4vw, 4rem);
   font-weight: 520;
   letter-spacing: -0.07em;
   line-height: 0.92;
@@ -283,6 +290,17 @@
   color: var(--atlas-accent);
 }
 
+.technology-entry {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.technology-entry strong {
+  color: var(--atlas-ink);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
 .home-link {
   padding: 0.75rem 1rem;
   border: 1px solid var(--atlas-ink);
@@ -309,7 +327,7 @@
   }
 
   .about-heading h1 {
-    font-size: clamp(2.8rem, 15vw, 4.5rem);
+    font-size: clamp(2rem, 9vw, 3rem);
   }
 
   .feature-grid article,

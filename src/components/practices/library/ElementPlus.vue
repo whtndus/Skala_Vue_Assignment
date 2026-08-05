@@ -52,7 +52,8 @@ const confirmDelete = () => {
 
 // 게이지 바 애니메이션 가동
 const startDownload = () => {
-  if (isDownloading.value) return (isDownloading.value = true)
+  if (isDownloading.value) return
+  isDownloading.value = true
   downloadProgress.value = 0
 
   const interval = setInterval(() => {

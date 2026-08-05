@@ -30,6 +30,7 @@ export default defineConfig([
   {
     name: 'app/custom-rules', // 규칙 묶음의 식별자 이름 (옵션)
     rules: {
+      eqeqeq: ['error', 'always'], // 느슨한 비교 대신 엄격한 비교 연산자 사용
       'no-unused-vars': 'warn', // 선언 후 사용하지 않은 변수는 경고 처리
       'no-console': 'off', // 개발 편의를 위해 console.log 허용
       'vue/multi-word-component-names': 'off', // 단일 단어로 된 컴포넌트명 허용
