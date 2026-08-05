@@ -277,14 +277,14 @@ const queryModel = computed({
   width: 100%;
   padding: 0;
   color: #70726e;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
 
 .input-mode-selector label {
   color: #4e534f;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
 }
 
 .input-mode-selector input {
@@ -321,7 +321,7 @@ const queryModel = computed({
   border-radius: 0;
   color: #f1eee6;
   background: #252b27;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
 }
 
@@ -333,7 +333,7 @@ const queryModel = computed({
 .mode-description,
 .parent-query {
   color: #777a75;
-  font-size: 0.69rem;
+  font-size: 0.75rem;
 }
 
 .parent-query strong,
@@ -348,7 +348,7 @@ const queryModel = computed({
   border-left: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
 }
 
 .api-error,

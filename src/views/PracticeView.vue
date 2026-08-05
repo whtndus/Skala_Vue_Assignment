@@ -39,6 +39,7 @@ import SlotScopedParent from '@/components/practices/component/SlotScopedParent.
 import StoreCounter from '@/components/practices/library/StoreCounter.vue'
 import AxiosWeather from '@/components/practices/library/AxiosWeather.vue'
 import AxiosJson from '@/components/practices/library/AxiosJson.vue'
+import ElementPlusPractice from '@/components/practices/library/ElementPlus.vue'
 
 const practiceSections = [
   {
@@ -155,6 +156,12 @@ const practiceSections = [
       { label: '날씨 API 요청', component: AxiosWeather },
       { label: 'JSON 데이터 요청', component: AxiosJson },
     ],
+  },
+  {
+    id: 'element-plus',
+    title: 'Element Plus',
+    description: 'Element Plus의 폼, 데이터 입력, 피드백 컴포넌트를 반응형 상태와 연결해 실습합니다.',
+    lessons: [{ label: 'Element Plus UI Components', component: ElementPlusPractice }],
   },
 ]
 

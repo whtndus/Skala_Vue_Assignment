@@ -8,7 +8,7 @@
  */
 import { ref, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElSkeleton } from 'element-plus'
+import { ElBacktop, ElMessage, ElSkeleton } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useWeatherSearch } from '@/composables/useWeatherSearch'
 import { useTemperature } from '@/composables/useTemperature'
@@ -166,20 +166,34 @@ const hottestCity = computed(() => {
   return [...weatherList.value].sort((a, b) => b.temp - a.temp)[0]
 })
 
+const showAtlasMessage = (message, type = 'success') => {
+  ElMessage({
+    message,
+    type,
+    duration: 2400,
+    customClass: 'atlas-message',
+  })
+}
+
 const handleCitySearch = async (cityName) => {
   selectedStatus.value = '전체'
   const city = await weatherStore.searchCityWeather(cityName)
 
-  if (!city) return
+  if (!city) {
+    showAtlasMessage(searchError.value || '날씨 정보를 불러오지 못했습니다.', 'error')
+    return
+  }
 
   searchQuery.value = city.name
   activeCityId.value = city.id
   selectedCityInfo.value = `${city.name}의 실시간 날씨를 불러왔습니다.`
+  showAtlasMessage(`${city.name}의 실시간 관측을 반영했습니다.`)
 }
 
 const handleToggleFavorite = (city) => {
   const wasAdded = toggleFavorite(city)
   selectedCityInfo.value = wasAdded ? `${city.name}을(를) 즐겨찾기에 추가했습니다.` : `${city.name}을(를) 즐겨찾기에서 해제했습니다.`
+  showAtlasMessage(wasAdded ? `${city.name}을 즐겨찾기에 추가했습니다.` : `${city.name}을 즐겨찾기에서 해제했습니다.`, wasAdded ? 'success' : 'info')
 }
 
 const handleFavoriteSelection = async (city) => {
@@ -436,6 +450,10 @@ const showDetail = (cityId) => {
       </template>
     </BaseDashboardCard>
     </div>
+
+    <ElBacktop :right="24" :bottom="24" class="atlas-backtop" aria-label="페이지 맨 위로 이동">
+      <span aria-hidden="true">UP</span>
+    </ElBacktop>
   </div>
 </template>
 
@@ -794,7 +812,7 @@ const showDetail = (cityId) => {
   width: min(100% - 6vw, 1480px);
   height: 100%;
   margin: 0 auto;
-  padding-top: clamp(7.5rem, 15vh, 10rem);
+  padding-top: clamp(7.5rem, 14vh, 9rem);
 }
 
 .atlas-index {
@@ -802,38 +820,38 @@ const showDetail = (cityId) => {
   justify-content: space-between;
   padding-top: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.38);
-  font-size: 0.6rem;
+  font-size: clamp(0.7rem, 0.75vw, 0.78rem);
   font-weight: 750;
   letter-spacing: 0.14em;
 }
 
 .atlas-copy {
   position: absolute;
-  top: 27%;
+  top: 25%;
   left: 0;
   width: min(64vw, 900px);
 }
 
 .atlas-kicker {
   margin: 0 0 1rem;
-  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  font-size: clamp(0.76rem, 1vw, 0.88rem);
   font-weight: 750;
   letter-spacing: 0.18em;
 }
 
 .atlas-copy h1 {
   margin: 0;
-  overflow: hidden;
+  overflow: visible;
   color: inherit;
-  font-size: clamp(4.8rem, 12vw, 11rem);
+  font-size: clamp(4.4rem, 10vw, 9rem);
   font-weight: 650;
   letter-spacing: -0.075em;
-  line-height: 0.78;
+  line-height: 0.88;
 }
 
 .atlas-condition {
   margin-top: 1.5rem;
-  font-size: 0.74rem;
+  font-size: clamp(0.75rem, 0.9vw, 0.84rem);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -841,14 +859,14 @@ const showDetail = (cityId) => {
 
 .atlas-temperature {
   position: absolute;
-  bottom: -0.11em;
-  left: -0.055em;
+  bottom: max(1.5rem, 2.5vh);
+  left: -0.025em;
   color: inherit;
-  font-size: clamp(10rem, 23vw, 22rem);
+  font-size: clamp(9rem, 18vw, 17rem);
   font-weight: 250;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.11em;
-  line-height: 0.7;
+  line-height: 0.8;
   white-space: nowrap;
 }
 
@@ -871,14 +889,14 @@ const showDetail = (cityId) => {
 }
 
 .atlas-metrics dt {
-  font-size: 0.58rem;
+  font-size: clamp(0.68rem, 0.7vw, 0.76rem);
   font-weight: 700;
   letter-spacing: 0.15em;
 }
 
 .atlas-metrics dd {
   margin: 0;
-  font-size: clamp(0.95rem, 1.6vw, 1.35rem);
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
   font-weight: 550;
 }
 
@@ -908,7 +926,7 @@ const showDetail = (cityId) => {
 }
 
 .atlas-navigation span {
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -926,7 +944,7 @@ const showDetail = (cityId) => {
 .atlas-city-rail button {
   padding: 0.3rem 0;
   border-bottom: 1px solid transparent;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   opacity: 0.55;
@@ -997,7 +1015,7 @@ const showDetail = (cityId) => {
 .atlas-timeline header p,
 .atlas-timeline header > span {
   color: #8d9691;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
@@ -1057,13 +1075,13 @@ const showDetail = (cityId) => {
 }
 
 .timeline-labels strong {
-  font-size: 0.86rem;
+  font-size: 1rem;
   font-weight: 550;
 }
 
 .timeline-labels small {
   color: #858d89;
-  font-size: 0.56rem;
+  font-size: 0.7rem;
   letter-spacing: 0.1em;
 }
 
@@ -1231,7 +1249,7 @@ const showDetail = (cityId) => {
 
 .city-index-caption span {
   margin-bottom: 0.75rem;
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.14em;
 }
@@ -1245,7 +1263,7 @@ const showDetail = (cityId) => {
 
 .city-index-caption small {
   margin-top: 0.9rem;
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -1273,7 +1291,7 @@ const showDetail = (cityId) => {
   border-radius: 0;
   color: inherit;
   background: transparent;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   backdrop-filter: none;
@@ -1308,6 +1326,33 @@ const showDetail = (cityId) => {
   }
 }
 
+@media (min-width: 761px) and (max-height: 760px) {
+  .atlas-frame {
+    padding-top: 7rem;
+  }
+
+  .atlas-copy {
+    top: 23%;
+  }
+
+  .atlas-copy h1 {
+    font-size: clamp(4rem, 9vw, 7.5rem);
+  }
+
+  .atlas-temperature {
+    bottom: 1.25rem;
+    font-size: clamp(8rem, 16vw, 13.5rem);
+  }
+
+  .atlas-metrics {
+    bottom: 18%;
+  }
+
+  .atlas-city-rail {
+    bottom: 32%;
+  }
+}
+
 @media (max-width: 760px) {
   .atlas-hero {
     min-height: 680px;
@@ -1323,34 +1368,50 @@ const showDetail = (cityId) => {
   }
 
   .atlas-copy {
-    top: 25%;
+    top: 23%;
     width: 100%;
   }
 
   .atlas-copy h1 {
-    font-size: clamp(4.2rem, 23vw, 7rem);
+    font-size: clamp(3.7rem, 18vw, 5.6rem);
+    line-height: 0.92;
   }
 
   .atlas-temperature {
-    bottom: 7%;
-    font-size: clamp(8rem, 45vw, 13rem);
+    bottom: 3.5rem;
+    font-size: clamp(7.5rem, 36vw, 10rem);
+    line-height: 0.85;
   }
 
   .atlas-metrics {
     right: 0;
-    bottom: 28%;
-    width: 50%;
+    top: 45%;
+    bottom: auto;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+
+  .atlas-metrics div {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.7rem 0;
+  }
+
+  .atlas-metrics div + div {
+    padding-left: 0.8rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.28);
   }
 
   .atlas-city-rail {
     right: auto;
-    bottom: 20%;
+    bottom: 31%;
     left: 0;
     max-width: 100%;
   }
 
   .atlas-navigation {
-    bottom: 3%;
+    right: 0;
+    bottom: 1rem;
   }
 
   .atlas-timeline {
@@ -1363,7 +1424,7 @@ const showDetail = (cityId) => {
   }
 
   .timeline-labels span:nth-child(even) {
-    visibility: hidden;
+    opacity: 0.45;
   }
 
   .atlas-content {
@@ -1391,6 +1452,30 @@ const showDetail = (cityId) => {
   }
 }
 
+@media (max-width: 420px) {
+  .atlas-index span:last-child {
+    display: none;
+  }
+
+  .atlas-copy {
+    top: 22%;
+  }
+
+  .atlas-kicker {
+    margin-bottom: 0.7rem;
+    font-size: 0.7rem;
+  }
+
+  .atlas-condition {
+    margin-top: 1rem;
+    font-size: 0.7rem;
+  }
+
+  .atlas-metrics {
+    top: 43%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .atlas-backdrop,
   .atlas-copy,
@@ -1398,5 +1483,49 @@ const showDetail = (cityId) => {
     animation: none;
     transition: none;
   }
+}
+
+.atlas-backtop {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(30, 33, 31, 0.42);
+  border-radius: 0;
+  background: #ebe8e0;
+  color: #1e211f;
+  box-shadow: none;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.atlas-backtop:hover {
+  background: #536d7a;
+  color: #fff;
+  box-shadow: none;
+}
+</style>
+
+<style>
+.el-message.atlas-message {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(30, 33, 31, 0.28);
+  border-radius: 0;
+  background: #ebe8e0;
+  box-shadow: none;
+}
+
+.el-message.atlas-message .el-message__content {
+  color: #1e211f;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.015em;
+}
+
+.el-message.atlas-message.el-message--success .el-message__icon {
+  color: #536d7a;
+}
+
+.el-message.atlas-message.el-message--error {
+  border-color: rgba(133, 60, 48, 0.46);
 }
 </style>
