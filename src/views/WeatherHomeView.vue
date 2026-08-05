@@ -6,12 +6,13 @@
  * 2. 검색 로직은 useWeatherSearch Composable로 재사용
  * 3. BaseDashboardCard와 WeatherCard의 Named/Scoped Slot 커스터마이징
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElBacktop, ElMessage, ElSkeleton } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useWeatherSearch } from '@/composables/useWeatherSearch'
 import { useTemperature } from '@/composables/useTemperature'
+import { fetchForecastByCoordinates, getWeatherErrorMessage } from '@/services/openWeatherApi'
 import { useWeatherStore } from '@/stores/weatherStore'
 import { useFavoritesStore } from '@/stores/favoritesStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
@@ -121,21 +122,96 @@ const activeCity = computed(() => weatherStore.findWeatherById(activeCityId.valu
 const activeAtlasImage = computed(() => atlasImages[activeCity.value?.status] || cloudCityImage)
 const activeAtlasHeadline = computed(() => atlasHeadlines[activeCity.value?.status] || 'WEATHER ACROSS THE CITY')
 const activeAtlasTheme = computed(() => atlasThemeClasses[activeCity.value?.status] || 'atlas-clouds')
+const activeCityNameLength = computed(() => Array.from(activeCity.value?.name || '').length)
+
+const forecastReadings = ref([])
+const isForecastLoading = ref(false)
+const forecastError = ref('')
+const forecastCache = new Map()
+let forecastRequestId = 0
+let forecastDebounceTimer
+
+const loadActiveForecast = async () => {
+  const coordinates = activeCity.value?.coordinates
+  const currentRequestId = ++forecastRequestId
+
+  forecastReadings.value = []
+  forecastError.value = ''
+  isForecastLoading.value = false
+
+  if (!coordinates) {
+    forecastError.value = '이 도시의 좌표 정보가 없어 시간대별 예보를 표시할 수 없습니다.'
+    return
+  }
+
+  const cacheKey = `${coordinates.lat},${coordinates.lon}`
+  const cachedForecast = forecastCache.get(cacheKey)
+
+  if (cachedForecast) {
+    forecastReadings.value = cachedForecast
+    return
+  }
+
+  isForecastLoading.value = true
+
+  try {
+    const forecast = await fetchForecastByCoordinates(coordinates)
+    if (currentRequestId !== forecastRequestId) return
+
+    forecastCache.set(cacheKey, forecast)
+    forecastReadings.value = forecast
+  } catch (error) {
+    if (currentRequestId !== forecastRequestId) return
+    forecastError.value = getWeatherErrorMessage(error)
+  } finally {
+    if (currentRequestId === forecastRequestId) isForecastLoading.value = false
+  }
+}
+
+watch(
+  () => activeCity.value?.id,
+  () => {
+    clearTimeout(forecastDebounceTimer)
+    forecastDebounceTimer = setTimeout(loadActiveForecast, 240)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => clearTimeout(forecastDebounceTimer))
 
 const timelineReadings = computed(() => {
-  const baseTemperature = Number(activeCity.value?.temp || 0)
-  const offsets = [-2, -1, 0, 1, 0, -1, -2]
-  const labels = ['06', '09', '12', '15', '18', '21', '24']
+  if (!forecastReadings.value.length) return []
 
-  return labels.map((label, index) => ({
-    label,
-    temperature: Math.round(baseTemperature + offsets[index]),
-    x: 4 + index * 15.3,
-    y: 62 - (offsets[index] + 2) * 10,
+  const temperatures = forecastReadings.value.map((reading) => reading.temperature)
+  const minTemperature = Math.min(...temperatures)
+  const maxTemperature = Math.max(...temperatures)
+  const rawTemperatureRange = maxTemperature - minTemperature
+  const temperatureRange = Math.max(rawTemperatureRange, 2)
+  const visualMinTemperature = minTemperature - (temperatureRange - rawTemperatureRange) / 2
+
+  return forecastReadings.value.map((reading, index, readings) => ({
+    ...reading,
+    x: readings.length === 1 ? 50 : 3 + index * (94 / (readings.length - 1)),
+    y: 46 - ((reading.temperature - visualMinTemperature) / temperatureRange) * 32,
   }))
 })
 
-const timelinePath = computed(() => timelineReadings.value.map((reading, index) => `${index === 0 ? 'M' : 'L'} ${reading.x} ${reading.y}`).join(' '))
+const timelinePath = computed(() =>
+  timelineReadings.value.reduce((path, reading, index, readings) => {
+    if (index === 0) return `M ${reading.x} ${reading.y}`
+
+    const previous = readings[index - 1]
+    const controlX = (previous.x + reading.x) / 2
+    return `${path} C ${controlX} ${previous.y}, ${controlX} ${reading.y}, ${reading.x} ${reading.y}`
+  }, ''),
+)
+
+const timelineAreaPath = computed(() => {
+  if (!timelineReadings.value.length) return ''
+  const first = timelineReadings.value[0]
+  const last = timelineReadings.value.at(-1)
+  return `${timelinePath.value} L ${last.x} 52 L ${first.x} 52 Z`
+})
 
 const getStatusCount = (status) => {
   if (status === '전체') return filteredWeatherList.value.length
@@ -248,10 +324,12 @@ const showDetail = (cityId) => {
         <Transition name="atlas-copy" mode="out-in">
           <div :key="activeCity.id" class="atlas-copy">
             <p class="atlas-kicker">{{ activeAtlasHeadline }}</p>
-            <h1 id="atlas-city-name">{{ activeCity.name }}</h1>
-            <p class="atlas-condition">
-              {{ activeCity.status }}<template v-if="activeCity.description"> / {{ activeCity.description }}</template>
-            </p>
+            <div class="atlas-title-line" :class="{ 'is-medium': activeCityNameLength > 6, 'is-long': activeCityNameLength > 11 }">
+              <h1 id="atlas-city-name">{{ activeCity.name }}</h1>
+              <p class="atlas-condition">
+                {{ activeCity.status }}<template v-if="activeCity.description"> / {{ activeCity.description }}</template>
+              </p>
+            </div>
           </div>
         </Transition>
 
@@ -299,25 +377,36 @@ const showDetail = (cityId) => {
     <section v-if="activeCity" class="atlas-timeline" aria-labelledby="timeline-title">
       <header>
         <div>
-          <p>VISUAL TREND / CURRENT-DAY ESTIMATE</p>
-          <h2 id="timeline-title">Temperature arc</h2>
+          <p>LIVE FORECAST / 3-HOUR INTERVALS</p>
+          <h2 id="timeline-title">Next 18 hours</h2>
         </div>
-        <span>{{ activeCity.name }} · {{ activeCity.observedAt }}</span>
+        <span>{{ activeCity.name }} · OPENWEATHER FORECAST</span>
       </header>
 
-      <div class="timeline-chart">
-        <svg viewBox="0 0 100 76" preserveAspectRatio="none" role="img" aria-label="현재 기온을 기준으로 한 시간대별 시각 추세">
-          <path class="timeline-guide" d="M 0 62 L 100 62" />
+      <div v-if="timelineReadings.length" class="timeline-chart">
+        <svg viewBox="0 0 100 56" preserveAspectRatio="none" role="img" :aria-label="`${activeCity.name}의 실제 향후 18시간 기온 예보`">
+          <defs>
+            <linearGradient id="timeline-area-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#9db4b3" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#9db4b3" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <path class="timeline-guide" d="M 0 14 L 100 14 M 0 30 L 100 30 M 0 46 L 100 46" />
+          <path class="timeline-area" :d="timelineAreaPath" />
           <path class="timeline-line" :d="timelinePath" />
-          <circle v-for="reading in timelineReadings" :key="reading.label" :cx="reading.x" :cy="reading.y" r="0.9" />
+          <circle v-for="reading in timelineReadings" :key="reading.timestamp" :cx="reading.x" :cy="reading.y" r="0.75" />
         </svg>
         <div class="timeline-labels">
-          <span v-for="reading in timelineReadings" :key="reading.label">
-            <strong>{{ reading.temperature }}°</strong>
-            <small>{{ reading.label }}:00</small>
+          <span v-for="reading in timelineReadings" :key="reading.timestamp">
+            <small>{{ reading.label }}</small>
+            <strong>{{ formatTemperature(reading.temperature) }}</strong>
+            <em v-if="reading.precipitationProbability">RAIN {{ reading.precipitationProbability }}%</em>
           </span>
         </div>
       </div>
+
+      <p v-else-if="isForecastLoading" class="timeline-state" role="status">시간대별 예보를 동기화하고 있습니다.</p>
+      <p v-else class="timeline-state timeline-error" role="status">{{ forecastError || '시간대별 예보가 아직 제공되지 않았습니다.' }}</p>
     </section>
 
     <div class="atlas-content">
@@ -829,7 +918,7 @@ const showDetail = (cityId) => {
   position: absolute;
   top: 25%;
   left: 0;
-  width: min(64vw, 900px);
+  width: min(92vw, 1320px);
 }
 
 .atlas-kicker {
@@ -840,6 +929,7 @@ const showDetail = (cityId) => {
 }
 
 .atlas-copy h1 {
+  flex: 0 1 auto;
   margin: 0;
   overflow: visible;
   color: inherit;
@@ -847,23 +937,44 @@ const showDetail = (cityId) => {
   font-weight: 650;
   letter-spacing: -0.075em;
   line-height: 0.88;
+  white-space: nowrap;
+}
+
+.atlas-title-line {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: clamp(0.75rem, 1.8vw, 2rem);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.atlas-title-line.is-medium h1 {
+  font-size: clamp(4rem, 8vw, 7.4rem);
+}
+
+.atlas-title-line.is-long h1 {
+  font-size: clamp(3.2rem, 6.2vw, 5.8rem);
 }
 
 .atlas-condition {
-  margin-top: 1.5rem;
-  font-size: clamp(0.75rem, 0.9vw, 0.84rem);
+  flex: 0 0 clamp(7rem, 15vw, 14rem);
+  max-width: clamp(7rem, 15vw, 14rem);
+  margin: 0 0 0.72em;
+  font-size: clamp(0.75rem, 2vw, 0.84rem);
   font-weight: 700;
   letter-spacing: 0.1em;
+  line-height: 1.45;
   text-transform: uppercase;
 }
 
 .atlas-temperature {
   position: absolute;
-  bottom: max(1.5rem, 2.5vh);
+  bottom: max(8rem, 2.5vh);
   left: -0.025em;
   color: inherit;
-  font-size: clamp(9rem, 18vw, 17rem);
-  font-weight: 250;
+  font-size: clamp(9rem, 20vw, 18rem);
+  font-weight: 300;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.11em;
   line-height: 0.8;
@@ -934,7 +1045,7 @@ const showDetail = (cityId) => {
 .atlas-city-rail {
   position: absolute;
   right: 0;
-  bottom: 31%;
+  bottom: 38%;
   display: flex;
   gap: 0.9rem;
   max-width: 46vw;
@@ -999,17 +1110,18 @@ const showDetail = (cityId) => {
 }
 
 .atlas-timeline {
-  padding: clamp(3rem, 7vw, 6rem) max(3vw, calc((100vw - 1280px) / 2));
+  display: grid;
+  grid-template-columns: minmax(190px, 0.28fr) minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(2rem, 5vw, 5rem);
+  min-height: 250px;
+  padding: clamp(1.75rem, 3vw, 2.75rem) max(3vw, calc((100vw - 1280px) / 2));
   color: #eae7df;
   background: #1d211f;
 }
 
 .atlas-timeline header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  align-self: center;
 }
 
 .atlas-timeline header p,
@@ -1020,36 +1132,51 @@ const showDetail = (cityId) => {
   letter-spacing: 0.14em;
 }
 
+.atlas-timeline header > span {
+  display: block;
+  margin-top: 1.2rem;
+}
+
 .atlas-timeline h2 {
   margin: 0.4rem 0 0;
   color: inherit;
-  font-size: clamp(1.8rem, 4vw, 3.8rem);
+  font-size: clamp(1.7rem, 3vw, 3rem);
   font-weight: 500;
   letter-spacing: -0.05em;
+  line-height: 0.95;
 }
 
 .timeline-chart {
   position: relative;
+  min-width: 0;
 }
 
 .timeline-chart svg {
   width: 100%;
-  height: clamp(170px, 24vw, 280px);
+  height: 128px;
   overflow: visible;
 }
 
 .timeline-guide,
+.timeline-area,
 .timeline-line {
-  fill: none;
   vector-effect: non-scaling-stroke;
 }
 
 .timeline-guide {
+  fill: none;
   stroke: rgba(234, 231, 223, 0.18);
-  stroke-width: 1;
+  stroke-width: 0.75;
+  stroke-dasharray: 2 4;
+}
+
+.timeline-area {
+  fill: url(#timeline-area-gradient);
+  stroke: none;
 }
 
 .timeline-line {
+  fill: none;
   stroke: #9db4b3;
   stroke-width: 1.5;
 }
@@ -1063,15 +1190,16 @@ const showDetail = (cityId) => {
 
 .timeline-labels {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-top: 1rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-top: 0.35rem;
   border-top: 1px solid rgba(234, 231, 223, 0.2);
 }
 
 .timeline-labels span {
   display: grid;
-  gap: 0.25rem;
-  padding-top: 0.8rem;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.65rem 0.35rem 0 0;
 }
 
 .timeline-labels strong {
@@ -1083,6 +1211,32 @@ const showDetail = (cityId) => {
   color: #858d89;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
+}
+
+.timeline-labels em {
+  overflow: hidden;
+  color: #9db4b3;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-state {
+  align-self: center;
+  min-height: 128px;
+  margin: 0;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(234, 231, 223, 0.2);
+  color: #9db4b3;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.timeline-error {
+  color: #bca69e;
 }
 
 .atlas-content {
@@ -1373,8 +1527,27 @@ const showDetail = (cityId) => {
   }
 
   .atlas-copy h1 {
-    font-size: clamp(3.7rem, 18vw, 5.6rem);
+    font-size: clamp(3.15rem, 15vw, 4.8rem);
     line-height: 0.92;
+  }
+
+  .atlas-title-line {
+    align-items: baseline;
+    column-gap: 0.85rem;
+  }
+
+  .atlas-title-line.is-medium h1 {
+    font-size: clamp(2.85rem, 12vw, 4rem);
+  }
+
+  .atlas-title-line.is-long h1 {
+    font-size: clamp(2.35rem, 9vw, 3.2rem);
+  }
+
+  .atlas-condition {
+    flex-basis: clamp(6.5rem, 28vw, 9rem);
+    max-width: clamp(6.5rem, 28vw, 9rem);
+    margin-bottom: 0.45em;
   }
 
   .atlas-temperature {
@@ -1415,12 +1588,27 @@ const showDetail = (cityId) => {
   }
 
   .atlas-timeline {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    min-height: 0;
     padding-inline: 1rem;
   }
 
   .atlas-timeline header {
-    align-items: flex-start;
-    flex-direction: column;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .atlas-timeline header > span {
+    max-width: 42%;
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .timeline-chart svg {
+    height: 104px;
   }
 
   .timeline-labels span:nth-child(even) {
@@ -1467,7 +1655,7 @@ const showDetail = (cityId) => {
   }
 
   .atlas-condition {
-    margin-top: 1rem;
+    margin-bottom: 0.35em;
     font-size: 0.7rem;
   }
 

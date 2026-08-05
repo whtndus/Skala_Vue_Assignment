@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 const OPEN_WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather'
+const OPEN_WEATHER_FORECAST_URL = 'https://api.openweathermap.org/data/2.5/forecast'
 const OPEN_WEATHER_GEOCODING_URL = 'https://api.openweathermap.org/geo/1.0/direct'
 
 const statusMap = {
@@ -29,6 +30,16 @@ const formatObservedAt = (unixTime, timezoneOffset) => {
     timeZone: 'UTC',
     hour: 'numeric',
     minute: '2-digit',
+  }).format(localTime)
+}
+
+const formatForecastAt = (unixTime, timezoneOffset) => {
+  const localTime = new Date((unixTime + timezoneOffset) * 1000)
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'UTC',
+    weekday: 'short',
+    hour: '2-digit',
+    hour12: false,
   }).format(localTime)
 }
 
@@ -95,4 +106,32 @@ export const fetchWeatherByCity = async (cityName) => {
     observedAt: formatObservedAt(data.dt, data.timezone),
     source: 'live',
   }
+}
+
+export const fetchForecastByCoordinates = async ({ lat, lon }) => {
+  const apiKey = import.meta.env.VITE_WEATHER_API_KEY
+
+  if (!apiKey) throw new Error('VITE_WEATHER_API_KEY 환경변수를 확인해 주세요.')
+  if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) throw new Error('예보를 조회할 도시 좌표가 없습니다.')
+
+  const response = await axios.get(OPEN_WEATHER_FORECAST_URL, {
+    params: {
+      lat,
+      lon,
+      appid: apiKey,
+      units: 'metric',
+      lang: 'kr',
+      cnt: 6,
+    },
+  })
+
+  const timezoneOffset = response.data.city?.timezone || 0
+
+  return (response.data.list || []).map((forecast) => ({
+    timestamp: forecast.dt,
+    label: formatForecastAt(forecast.dt, timezoneOffset),
+    temperature: roundToOneDecimal(forecast.main?.temp),
+    description: forecast.weather?.[0]?.description || '',
+    precipitationProbability: Math.round(Number(forecast.pop || 0) * 100),
+  }))
 }

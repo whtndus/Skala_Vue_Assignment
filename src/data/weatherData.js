@@ -9,6 +9,7 @@ export const weatherData = [
     windSpeed: 2.4,
     precipitation: 0,
     observedAt: '오후 2:00',
+    coordinates: { lat: 37.5665, lon: 126.978 },
   },
   {
     id: 'city_02',
@@ -20,6 +21,7 @@ export const weatherData = [
     windSpeed: 3.1,
     precipitation: 8,
     observedAt: '오후 2:00',
+    coordinates: { lat: 37.2636, lon: 127.0286 },
   },
   {
     id: 'city_03',
@@ -31,6 +33,7 @@ export const weatherData = [
     windSpeed: 4.6,
     precipitation: 10,
     observedAt: '오후 2:00',
+    coordinates: { lat: 35.1796, lon: 129.0756 },
   },
   {
     id: 'city_04',
@@ -42,6 +45,7 @@ export const weatherData = [
     windSpeed: 5.2,
     precipitation: 65,
     observedAt: '오후 2:00',
+    coordinates: { lat: 37.6771, lon: 128.7187 },
   },
   {
     id: 'city_05',
@@ -53,6 +57,7 @@ export const weatherData = [
     windSpeed: 6.3,
     precipitation: 20,
     observedAt: '오후 2:00',
+    coordinates: { lat: 33.4996, lon: 126.5312 },
   },
   {
     id: 'city_06',
@@ -64,6 +69,7 @@ export const weatherData = [
     windSpeed: 2.8,
     precipitation: 0,
     observedAt: '오후 2:00',
+    coordinates: { lat: 37.5034, lon: 126.766 },
   },
 ]
 
