@@ -22,7 +22,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select-card', 'click-detail', 'toggle-favorite'])
+const emit = defineEmits(['select-card', 'click-detail', 'toggle-favorite', 'preview-city'])
 const { convertTemperature, unitSymbol } = useTemperature()
 
 const displayTemp = computed(() => convertTemperature(props.cityItem.temp))
@@ -45,7 +45,15 @@ const getCardGradient = (status) => {
 </script>
 
 <template>
-  <div class="weather-card" :class="getCardGradient(cityItem.status)" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
+  <div
+    class="weather-card"
+    :class="getCardGradient(cityItem.status)"
+    role="button"
+    tabindex="0"
+    @mouseenter="emit('preview-city', cityItem)"
+    @focusin="emit('preview-city', cityItem)"
+    @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)"
+  >
     <button
       type="button"
       class="favorite-button"
@@ -58,17 +66,21 @@ const getCardGradient = (status) => {
     </button>
 
     <div class="card-header">
-      <span class="weather-icon">{{ getWeatherIcon(cityItem.status) }}</span>
-      <h4 class="city-name">{{ cityItem.name }} ({{ cityItem.status }})</h4>
+      <span class="weather-icon" :data-weather-icon="getWeatherIcon(cityItem.status)" aria-hidden="true">—</span>
+      <div>
+        <h4 class="city-name">{{ cityItem.name }}</h4>
+        <small>{{ cityItem.country || 'KOREA' }}</small>
+      </div>
     </div>
 
     <div class="card-body">
-      <p class="temp">현재 기온: {{ displayTemp }}{{ unitSymbol }}</p>
+      <p class="temp">{{ displayTemp }}{{ unitSymbol }}</p>
+      <strong>{{ cityItem.status }}</strong>
 
       <!-- 기온에 따라 더움 / 보통 / 선선함 3단계 라벨 표시 -->
-      <span v-if="cityItem.temp >= 25" class="label label-hot">🔥 더움 (25도 이상)</span>
-      <span v-else-if="cityItem.temp >= 20" class="label label-normal">🌤️ 보통 (20~24도)</span>
-      <span v-else class="label label-cool">❄️ 선선함 (20도 미만)</span>
+      <span v-if="cityItem.temp >= 25" class="label label-hot">WARM / 25+</span>
+      <span v-else-if="cityItem.temp >= 20" class="label label-normal">MILD / 20—24</span>
+      <span v-else class="label label-cool">COOL / BELOW 20</span>
     </div>
 
     <div class="card-footer">
@@ -82,186 +94,161 @@ const getCardGradient = (status) => {
 
 <style scoped>
 .weather-card {
-  border-radius: 14px;
-  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 56px minmax(180px, 1.35fr) minmax(260px, 1fr) auto;
+  align-items: center;
+  min-height: 112px;
+  border: 0;
+  border-bottom: 1px solid #a7a59f;
+  color: #1f211f;
+  background: transparent;
   cursor: pointer;
+  counter-increment: city-row;
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
+    color 600ms ease,
+    padding 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 600ms ease;
 }
 
 .weather-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.05);
-  opacity: 0;
-  transition: opacity 0.3s;
+  color: #777872;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  content: counter(city-row, decimal-leading-zero);
 }
 
-.weather-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+.weather-card:hover,
+.weather-card:focus-visible {
+  padding-inline: 1rem;
+  color: #f3f1eb;
+  background: #242825;
+  outline: none;
 }
 
-.weather-card:hover::before {
-  opacity: 1;
+.weather-card:hover::before,
+.weather-card:focus-visible::before,
+.weather-card:hover .card-header small,
+.weather-card:focus-visible .card-header small,
+.weather-card:hover .label,
+.weather-card:focus-visible .label {
+  color: rgba(243, 241, 235, 0.62);
 }
 
 .favorite-button {
-  position: absolute;
-  z-index: 2;
-  top: 0.85rem;
-  right: 0.85rem;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
+  grid-column: 4;
+  grid-row: 1;
+  align-self: start;
+  justify-self: end;
+  margin-top: 0.75rem;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  border-radius: 50%;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.18);
-  font-size: 1.35rem;
-  line-height: 1;
-  backdrop-filter: blur(5px);
+  border: 0;
+  color: currentColor;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
-.favorite-button:hover:not(:disabled),
 .favorite-button.active {
-  color: #ffe082;
-  background: rgba(255, 255, 255, 0.32);
+  color: #9bb9bc;
 }
 
-/* Card Gradient Variants */
-.card-sunny {
-  background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 50%, #e8532e 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
-}
-
-.card-rainy {
-  background: linear-gradient(135deg, #667eea 0%, #4a6cf7 50%, #3b5bdb 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(74, 108, 247, 0.3);
-}
-
-.card-cloudy {
-  background: linear-gradient(135deg, #a8c0d6 0%, #7b9dba 50%, #6b8caa 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(123, 157, 186, 0.3);
-}
-
-.card-snowy {
-  background: linear-gradient(135deg, #85cdc9 0%, #82c9ce 100%);
-  color: #2c3e50;
-  box-shadow: 0 4px 16px rgba(116, 235, 229, 0.3);
-}
-
-.card-default {
-  background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(86, 171, 47, 0.3);
-}
-
-/* Card Inner Elements */
 .card-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
-  padding-right: 2.25rem;
+  gap: 1rem;
 }
 
 .weather-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  width: 1.5rem;
+  overflow: hidden;
+  font-size: 1.1rem;
+  filter: grayscale(1);
 }
 
 .city-name {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.3px;
   margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.6rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.card-header small {
+  display: block;
+  margin-top: 0.4rem;
+  color: #70716d;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
 
 .card-body {
-  margin-bottom: 1.25rem;
+  display: grid;
+  grid-template-columns: minmax(90px, 0.7fr) minmax(70px, 0.5fr) 1fr;
+  align-items: baseline;
+  gap: 1rem;
 }
 
 .temp {
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 0.6rem;
-  opacity: 0.95;
+  margin: 0;
+  font-size: clamp(1.55rem, 3.5vw, 2.8rem);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
 }
 
-/* Labels (v-if / v-else) */
+.card-body strong,
 .label {
-  display: inline-block;
-  padding: 0.3rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
-.label-hot {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(4px);
+.label {
+  color: #747570;
 }
 
-.label-normal {
-  background: rgba(255, 255, 255, 0.25);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(4px);
-}
-
-.label-cool {
-  background: rgba(255, 255, 255, 0.25);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(4px);
-}
-
-/* Card Footer & Detail Button */
 .card-footer {
-  display: flex;
-  justify-content: flex-end;
+  grid-column: 4;
+  grid-row: 1;
+  align-self: end;
+  justify-self: end;
+  margin-bottom: 0.75rem;
 }
 
 .detail-btn {
-  padding: 0.5rem 1.1rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
   color: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: transparent;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition:
-    background 0.25s,
-    transform 0.2s,
-    border-color 0.25s;
-  backdrop-filter: blur(4px);
 }
 
-.detail-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
-  border-color: rgba(255, 255, 255, 0.8);
-  transform: scale(1.03);
-}
+@media (max-width: 760px) {
+  .weather-card {
+    grid-template-columns: 34px 1fr auto;
+    gap: 0.4rem;
+    min-height: 138px;
+  }
 
-.detail-btn:active {
-  transform: scale(0.97);
+  .card-header {
+    grid-column: 2;
+  }
+
+  .card-body {
+    grid-column: 2 / -1;
+    grid-template-columns: 80px 60px 1fr;
+    margin-top: 0.8rem;
+  }
+
+  .favorite-button,
+  .card-footer {
+    grid-column: 3;
+  }
 }
 </style>

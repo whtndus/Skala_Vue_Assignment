@@ -108,7 +108,7 @@ const queryModel = computed({
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
   border: 1px solid var(--color-border, #dee2e6);
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 .input-mode-selector legend {
@@ -131,7 +131,7 @@ const queryModel = computed({
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--color-border, #dee2e6);
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 1rem;
   background: var(--color-background, #ffffff);
   color: var(--color-text, #2c3e50);
@@ -152,7 +152,7 @@ const queryModel = computed({
   flex: 0 0 auto;
   padding: 0.75rem 1rem;
   border: 1px solid #4a90d9;
-  border-radius: 8px;
+  border-radius: 0;
   background: #4a90d9;
   color: #fff;
   font-size: 0.9rem;
@@ -174,7 +174,7 @@ const queryModel = computed({
 
 .search-input:focus {
   border-color: #4a90d9;
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  box-shadow: none;
 }
 
 .mode-description,
@@ -238,7 +238,7 @@ const queryModel = computed({
 
 .error-badge {
   padding: 0.2rem 0.5rem;
-  border-radius: 999px;
+  border-radius: 0;
   color: #fff;
   background: #dc2626;
   font-size: 0.7rem;
@@ -262,5 +262,109 @@ const queryModel = computed({
 .retry-button:hover:not(:disabled) {
   color: #fff;
   background: #dc2626;
+}
+
+/* Atlas editorial search treatment */
+.input-mode-selector {
+  gap: 0.7rem 1.2rem;
+  margin-bottom: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.input-mode-selector legend {
+  width: 100%;
+  padding: 0;
+  color: #70726e;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.input-mode-selector label {
+  color: #4e534f;
+  font-size: 0.74rem;
+}
+
+.input-mode-selector input {
+  accent-color: #343c39;
+}
+
+.search-form {
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 1.5rem;
+}
+
+.search-input {
+  padding: 0.7rem 0;
+  border: 0;
+  border-bottom: 1px solid #666963;
+  border-radius: 0;
+  color: #1f2421;
+  background: transparent;
+  font-size: clamp(1.2rem, 3vw, 2.25rem);
+  font-weight: 450;
+  letter-spacing: -0.03em;
+}
+
+.search-input:focus {
+  border-color: #1f2421;
+  box-shadow: none;
+}
+
+.search-button {
+  min-height: 48px;
+  padding: 0.7rem 1rem;
+  border: 1px solid #252b27;
+  border-radius: 0;
+  color: #f1eee6;
+  background: #252b27;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+
+.search-button:hover:not(:disabled) {
+  color: #252b27;
+  background: transparent;
+}
+
+.mode-description,
+.parent-query {
+  color: #777a75;
+  font-size: 0.69rem;
+}
+
+.parent-query strong,
+.search-info strong {
+  color: #334641;
+}
+
+.search-info {
+  padding: 0.75rem 0;
+  border: 0;
+  border-bottom: 1px solid #a8a7a1;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.78rem;
+}
+
+.api-error,
+.retry-button,
+.error-badge {
+  border-radius: 0;
+}
+
+@media (max-width: 560px) {
+  .search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-button {
+    align-self: flex-start;
+  }
 }
 </style>

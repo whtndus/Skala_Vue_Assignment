@@ -22,9 +22,9 @@ const requestedPath = typeof route.query.from === 'string' ? route.query.from : 
   margin: 3rem auto 0;
   padding: 3.5rem 1.5rem;
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 16px;
+  border-radius: 0;
   background: var(--color-background-soft, #f8f9fa);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   text-align: center;
 }
 
@@ -56,8 +56,8 @@ const requestedPath = typeof route.query.from === 'string' ? route.query.from : 
 .not-found a {
   display: inline-flex;
   padding: 0.6rem 1rem;
-  border-radius: 8px;
-  background: #4a90d9;
+  border-radius: 0;
+  background: #303632;
   color: #fff;
   font-weight: 600;
 }

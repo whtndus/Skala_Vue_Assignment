@@ -17,6 +17,10 @@ import { useFavoritesStore } from '@/stores/favoritesStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
+import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
+import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
+import cloudCityImage from '@/assets/weather-atlas/cloud-city.jpg'
+import snowCityImage from '@/assets/weather-atlas/snow-city.jpg'
 
 const router = useRouter()
 const route = useRoute()
@@ -29,6 +33,7 @@ const { isFavorite, toggleFavorite } = favoritesStore
 
 // 2. 상태바 제어 반응형 데이터
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
+const activeCityId = ref(weatherList.value[0]?.id || '')
 
 // 3. 검색 상태와 파생 데이터는 Composable에서 관리
 const { searchQuery, debouncedSearchQuery, filteredWeatherList } = useWeatherSearch(weatherList)
@@ -91,9 +96,62 @@ const displayedWeatherList = computed(() => {
 const resultCount = computed(() => displayedWeatherList.value.length)
 const matchedCities = computed(() => displayedWeatherList.value.map((city) => city.name))
 
+const atlasImages = {
+  맑음: clearCityImage,
+  비: rainCityImage,
+  구름: cloudCityImage,
+  눈: snowCityImage,
+}
+
+const atlasHeadlines = {
+  맑음: 'CLEAR ABOVE THE CITY',
+  비: 'RAIN AFTER MIDNIGHT',
+  구름: 'CLOUDS OVER THE WATER',
+  눈: 'WHITE AIR, HIGH GROUND',
+}
+
+const atlasThemeClasses = {
+  맑음: 'atlas-clear',
+  비: 'atlas-rain',
+  구름: 'atlas-clouds',
+  눈: 'atlas-snow',
+}
+
+const activeCity = computed(() => weatherStore.findWeatherById(activeCityId.value) || displayedWeatherList.value[0] || weatherList.value[0])
+const activeAtlasImage = computed(() => atlasImages[activeCity.value?.status] || cloudCityImage)
+const activeAtlasHeadline = computed(() => atlasHeadlines[activeCity.value?.status] || 'WEATHER ACROSS THE CITY')
+const activeAtlasTheme = computed(() => atlasThemeClasses[activeCity.value?.status] || 'atlas-clouds')
+
+const timelineReadings = computed(() => {
+  const baseTemperature = Number(activeCity.value?.temp || 0)
+  const offsets = [-2, -1, 0, 1, 0, -1, -2]
+  const labels = ['06', '09', '12', '15', '18', '21', '24']
+
+  return labels.map((label, index) => ({
+    label,
+    temperature: Math.round(baseTemperature + offsets[index]),
+    x: 4 + index * 15.3,
+    y: 62 - (offsets[index] + 2) * 10,
+  }))
+})
+
+const timelinePath = computed(() => timelineReadings.value.map((reading, index) => `${index === 0 ? 'M' : 'L'} ${reading.x} ${reading.y}`).join(' '))
+
 const getStatusCount = (status) => {
   if (status === '전체') return filteredWeatherList.value.length
   return filteredWeatherList.value.filter((city) => city.status === status).length
+}
+
+const previewCity = (city) => {
+  if (!city) return
+  activeCityId.value = city.id
+}
+
+const moveActiveCity = (direction) => {
+  const cities = displayedWeatherList.value.length ? displayedWeatherList.value : weatherList.value
+  const currentIndex = cities.findIndex((city) => city.id === activeCity.value?.id)
+  const nextIndex = (currentIndex + direction + cities.length) % cities.length
+  previewCity(cities[nextIndex])
 }
 
 // 4. computed — 대시보드 통계 연산
@@ -115,6 +173,7 @@ const handleCitySearch = async (cityName) => {
   if (!city) return
 
   searchQuery.value = city.name
+  activeCityId.value = city.id
   selectedCityInfo.value = `${city.name}의 실시간 날씨를 불러왔습니다.`
 }
 
@@ -128,6 +187,7 @@ const handleFavoriteSelection = async (city) => {
 
   if (weatherStore.findWeatherById(city.id)) {
     searchQuery.value = city.name
+    activeCityId.value = city.id
     selectedCityInfo.value = `${city.name} 즐겨찾기를 선택했습니다.`
     return
   }
@@ -157,10 +217,100 @@ const showDetail = (cityId) => {
 
 <template>
   <div class="dashboard-wrapper">
+    <section v-if="activeCity" class="atlas-hero" :class="activeAtlasTheme" aria-labelledby="atlas-city-name">
+      <Transition name="atlas-backdrop" mode="out-in">
+        <div :key="activeAtlasImage" class="atlas-backdrop" :style="{ backgroundImage: `url(${activeAtlasImage})` }"></div>
+      </Transition>
+      <div class="atlas-shade" aria-hidden="true"></div>
+      <div class="atlas-grain" aria-hidden="true"></div>
+
+      <div class="atlas-frame">
+        <div class="atlas-index">
+          <span>VOL. 01</span>
+          <span>{{ activeCity.observedAt }} LOCAL</span>
+          <span>{{ activeCity.country || 'KR' }} / {{ activeCity.source === 'live' ? 'LIVE' : 'ATLAS' }}</span>
+        </div>
+
+        <Transition name="atlas-copy" mode="out-in">
+          <div :key="activeCity.id" class="atlas-copy">
+            <p class="atlas-kicker">{{ activeAtlasHeadline }}</p>
+            <h1 id="atlas-city-name">{{ activeCity.name }}</h1>
+            <p class="atlas-condition">
+              {{ activeCity.status }}<template v-if="activeCity.description"> / {{ activeCity.description }}</template>
+            </p>
+          </div>
+        </Transition>
+
+        <Transition name="atlas-temperature" mode="out-in">
+          <strong :key="`${activeCity.id}-${activeCity.temp}`" class="atlas-temperature">{{ formatTemperature(activeCity.temp) }}</strong>
+        </Transition>
+
+        <dl class="atlas-metrics">
+          <div>
+            <dt>FEELS</dt>
+            <dd>{{ formatTemperature(activeCity.feelsLike) }}</dd>
+          </div>
+          <div>
+            <dt>HUMIDITY</dt>
+            <dd>{{ activeCity.humidity }}%</dd>
+          </div>
+          <div>
+            <dt>WIND</dt>
+            <dd>{{ activeCity.windSpeed }} m/s</dd>
+          </div>
+        </dl>
+
+        <div class="atlas-navigation" aria-label="도시 슬라이드 이동">
+          <button type="button" aria-label="이전 도시" @click="moveActiveCity(-1)">←</button>
+          <span>{{ String(weatherList.findIndex((city) => city.id === activeCity.id) + 1).padStart(2, '0') }} / {{ String(weatherList.length).padStart(2, '0') }}</span>
+          <button type="button" aria-label="다음 도시" @click="moveActiveCity(1)">→</button>
+        </div>
+
+        <nav class="atlas-city-rail" aria-label="도시 빠른 이동">
+          <button
+            v-for="city in displayedWeatherList.slice(0, 6)"
+            :key="city.id"
+            type="button"
+            :class="{ active: city.id === activeCity.id }"
+            @mouseenter="previewCity(city)"
+            @focus="previewCity(city)"
+            @click="previewCity(city)"
+          >
+            {{ city.name }}
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <section v-if="activeCity" class="atlas-timeline" aria-labelledby="timeline-title">
+      <header>
+        <div>
+          <p>VISUAL TREND / CURRENT-DAY ESTIMATE</p>
+          <h2 id="timeline-title">Temperature arc</h2>
+        </div>
+        <span>{{ activeCity.name }} · {{ activeCity.observedAt }}</span>
+      </header>
+
+      <div class="timeline-chart">
+        <svg viewBox="0 0 100 76" preserveAspectRatio="none" role="img" aria-label="현재 기온을 기준으로 한 시간대별 시각 추세">
+          <path class="timeline-guide" d="M 0 62 L 100 62" />
+          <path class="timeline-line" :d="timelinePath" />
+          <circle v-for="reading in timelineReadings" :key="reading.label" :cx="reading.x" :cy="reading.y" r="0.9" />
+        </svg>
+        <div class="timeline-labels">
+          <span v-for="reading in timelineReadings" :key="reading.label">
+            <strong>{{ reading.temperature }}°</strong>
+            <small>{{ reading.label }}:00</small>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="atlas-content">
     <!-- 1) 도시 검색 영역 (BaseDashboardCard 슬롯 주입) -->
     <BaseDashboardCard>
       <template #header>
-        <h3 class="dashboard-card-title">🔍 도시 검색</h3>
+        <h3 class="dashboard-card-title">도시 검색</h3>
       </template>
 
       <SearchBar
@@ -174,13 +324,14 @@ const showDetail = (cityId) => {
     </BaseDashboardCard>
 
     <p v-if="lastUpdatedCity" class="live-update" role="status">
-      <span aria-hidden="true">🛰️</span>
+      <span aria-hidden="true">LIVE</span>
       {{ lastUpdatedCity.name }} 실시간 관측 반영 · 현재 API 연동 도시 {{ liveCityCount }}개
     </p>
 
     <!-- 2) 선택 도시 상태바 -->
     <div class="status-bar">
-      <span class="status-icon">{{ selectedCityInfo === '카드를 클릭하거나 검색해 보세요.' ? '💡' : '📍' }}</span>
+      <span class="status-icon" aria-hidden="true">●</span>
+      <span class="visually-hidden">{{ selectedCityInfo === '카드를 클릭하거나 검색해 보세요.' ? '안내' : '선택 위치' }}</span>
       <span>{{ selectedCityInfo }}</span>
     </div>
 
@@ -216,11 +367,25 @@ const showDetail = (cityId) => {
     </section>
 
     <!-- 4) 지역별 날씨 현황 영역 (BaseDashboardCard 슬롯 주입) -->
-    <BaseDashboardCard>
+    <BaseDashboardCard class="city-index-section">
       <template #header>
-        <h3 class="dashboard-card-title">🏙️ 지역별 날씨 현황</h3>
+        <h3 class="dashboard-card-title">지역별 날씨 현황</h3>
       </template>
 
+      <div class="city-index-layout">
+        <aside class="city-index-preview" aria-label="선택 도시 비주얼 미리보기">
+          <Transition name="atlas-backdrop" mode="out-in">
+            <div :key="activeAtlasImage" class="city-index-image" :style="{ backgroundImage: `url(${activeAtlasImage})` }"></div>
+          </Transition>
+          <div class="city-index-shade" aria-hidden="true"></div>
+          <div class="city-index-caption">
+            <span>{{ activeAtlasHeadline }}</span>
+            <strong>{{ activeCity.name }}</strong>
+            <small>{{ formatTemperature(activeCity.temp) }} / {{ activeCity.status }}</small>
+          </div>
+        </aside>
+
+        <div class="city-index-data">
       <div class="list-controls">
         <fieldset class="status-filter">
           <legend>날씨 상태</legend>
@@ -253,6 +418,7 @@ const showDetail = (cityId) => {
           @select-card="(msg) => (selectedCityInfo = msg)"
           @click-detail="showDetail"
           @toggle-favorite="handleToggleFavorite"
+          @preview-city="previewCity"
         >
           <template #actions="{ city, requestDetail }">
             <button class="custom-detail-btn" type="button" @click.stop="requestDetail">{{ city.name }} 상세보기</button>
@@ -261,12 +427,15 @@ const showDetail = (cityId) => {
       </div>
 
       <!-- 검색 결과 없을 시 안내 -->
-      <p v-if="!isSearching && displayedWeatherList.length === 0" class="no-result">😭 검색 결과와 일치하는 도시가 없습니다.</p>
+      <p v-if="!isSearching && displayedWeatherList.length === 0" class="no-result">검색 결과와 일치하는 도시가 없습니다.</p>
+        </div>
+      </div>
 
       <template #footer>
         <p class="dashboard-card-summary">현재 {{ resultCount }}개 도시를 표시하고 있습니다.</p>
       </template>
     </BaseDashboardCard>
+    </div>
   </div>
 </template>
 
@@ -291,7 +460,7 @@ const showDetail = (cityId) => {
   margin: -0.25rem 0 1.25rem;
   padding: 0.65rem 0.85rem;
   border: 1px solid #b7ebd2;
-  border-radius: 9px;
+  border-radius: 0;
   background: #effcf5;
   color: #227a50;
   font-size: 0.82rem;
@@ -305,10 +474,10 @@ const showDetail = (cityId) => {
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   margin-bottom: 1.25rem;
-  border-radius: 10px;
+  border-radius: 0;
   font-size: 0.95rem;
   font-weight: 500;
-  background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf9 100%);
+  background: transparent;
   color: #1a6fa8;
   border: 1px solid #b8dff5;
 }
@@ -321,7 +490,7 @@ const showDetail = (cityId) => {
   margin-bottom: 1.25rem;
   padding: 0.8rem 1rem;
   border: 1px solid #f4d98b;
-  border-radius: 10px;
+  border-radius: 0;
   background: #fffaf0;
 }
 
@@ -349,7 +518,7 @@ const showDetail = (cityId) => {
 .favorite-chips button {
   padding: 0.35rem 0.65rem;
   border: 1px solid #e8c967;
-  border-radius: 999px;
+  border-radius: 0;
   color: #795811;
   background: #fff;
   font-size: 0.78rem;
@@ -371,7 +540,7 @@ const showDetail = (cityId) => {
   min-height: 190px;
   padding: 1.25rem;
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 14px;
+  border-radius: 0;
   background: var(--color-background, #fff);
 }
 
@@ -395,7 +564,7 @@ const showDetail = (cityId) => {
   padding: 1rem 0.75rem;
   background: var(--color-background-soft, #f8f9fa);
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 12px;
+  border-radius: 0;
   text-align: center;
   transition:
     transform 0.2s,
@@ -404,7 +573,7 @@ const showDetail = (cityId) => {
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .stat-label {
@@ -490,7 +659,7 @@ const showDetail = (cityId) => {
   width: 100%;
   padding: 0.45rem 0.65rem;
   border: 1px solid var(--color-border, #dee2e6);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--color-background, #fff);
   color: var(--color-text, #2c3e50);
   font: inherit;
@@ -520,7 +689,7 @@ const showDetail = (cityId) => {
 .custom-detail-btn {
   padding: 0.5rem 1.1rem;
   border: 1.5px solid rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.2);
   color: inherit;
   font-size: 0.85rem;
@@ -530,7 +699,7 @@ const showDetail = (cityId) => {
     background 0.25s,
     transform 0.2s,
     border-color 0.25s;
-  backdrop-filter: blur(4px);
+  backdrop-filter: none;
 }
 
 .custom-detail-btn:hover {
@@ -552,6 +721,682 @@ const showDetail = (cityId) => {
   .sort-control {
     flex-basis: auto;
     width: 100%;
+  }
+}
+
+/* Cinematic weather atlas */
+.dashboard-wrapper {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: #e9e7e1;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.atlas-hero {
+  --atlas-ink: #f5f1e8;
+  position: relative;
+  min-height: 720px;
+  height: 100svh;
+  overflow: hidden;
+  color: var(--atlas-ink);
+  background: #242725;
+  isolation: isolate;
+}
+
+.atlas-backdrop,
+.atlas-shade,
+.atlas-grain {
+  position: absolute;
+  inset: 0;
+}
+
+.atlas-backdrop {
+  z-index: -3;
+  background-position: center;
+  background-size: cover;
+  transform: scale(1.025);
+  animation: atlas-drift 12s ease-out both;
+}
+
+.atlas-shade {
+  z-index: -2;
+  background: rgba(14, 17, 16, 0.38);
+}
+
+.atlas-rain .atlas-shade {
+  background: rgba(7, 13, 16, 0.28);
+}
+
+.atlas-snow .atlas-shade {
+  background: rgba(30, 34, 35, 0.2);
+}
+
+.atlas-grain {
+  z-index: -1;
+  opacity: 0.14;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.44'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.atlas-frame {
+  position: relative;
+  width: min(100% - 6vw, 1480px);
+  height: 100%;
+  margin: 0 auto;
+  padding-top: clamp(7.5rem, 15vh, 10rem);
+}
+
+.atlas-index {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.38);
+  font-size: 0.6rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+}
+
+.atlas-copy {
+  position: absolute;
+  top: 27%;
+  left: 0;
+  width: min(64vw, 900px);
+}
+
+.atlas-kicker {
+  margin: 0 0 1rem;
+  font-size: clamp(0.68rem, 1vw, 0.82rem);
+  font-weight: 750;
+  letter-spacing: 0.18em;
+}
+
+.atlas-copy h1 {
+  margin: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: clamp(4.8rem, 12vw, 11rem);
+  font-weight: 650;
+  letter-spacing: -0.075em;
+  line-height: 0.78;
+}
+
+.atlas-condition {
+  margin-top: 1.5rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.atlas-temperature {
+  position: absolute;
+  bottom: -0.11em;
+  left: -0.055em;
+  color: inherit;
+  font-size: clamp(10rem, 23vw, 22rem);
+  font-weight: 250;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.11em;
+  line-height: 0.7;
+  white-space: nowrap;
+}
+
+.atlas-metrics {
+  position: absolute;
+  right: 0;
+  bottom: 19%;
+  display: grid;
+  width: min(34vw, 430px);
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.atlas-metrics div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.72rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.atlas-metrics dt {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.atlas-metrics dd {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.6vw, 1.35rem);
+  font-weight: 550;
+}
+
+.atlas-navigation {
+  position: absolute;
+  right: 0;
+  bottom: 6%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.atlas-navigation button,
+.atlas-city-rail button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.atlas-navigation button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 50%;
+}
+
+.atlas-navigation span {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.atlas-city-rail {
+  position: absolute;
+  right: 0;
+  bottom: 31%;
+  display: flex;
+  gap: 0.9rem;
+  max-width: 46vw;
+  overflow-x: auto;
+}
+
+.atlas-city-rail button {
+  padding: 0.3rem 0;
+  border-bottom: 1px solid transparent;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+.atlas-city-rail button:hover,
+.atlas-city-rail button.active {
+  border-bottom-color: currentColor;
+  opacity: 1;
+}
+
+.atlas-backdrop-enter-active,
+.atlas-backdrop-leave-active {
+  transition:
+    opacity 900ms ease,
+    transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.atlas-backdrop-enter-from,
+.atlas-backdrop-leave-to {
+  opacity: 0;
+  transform: scale(1.07);
+}
+
+.atlas-copy-enter-active,
+.atlas-copy-leave-active {
+  transition:
+    opacity 700ms ease,
+    clip-path 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.atlas-copy-enter-from,
+.atlas-copy-leave-to {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transform: translateY(28px);
+}
+
+.atlas-temperature-enter-active,
+.atlas-temperature-leave-active {
+  transition:
+    opacity 650ms ease,
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.atlas-temperature-enter-from,
+.atlas-temperature-leave-to {
+  opacity: 0;
+  transform: translateX(-4vw);
+}
+
+.atlas-timeline {
+  padding: clamp(3rem, 7vw, 6rem) max(3vw, calc((100vw - 1280px) / 2));
+  color: #eae7df;
+  background: #1d211f;
+}
+
+.atlas-timeline header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.atlas-timeline header p,
+.atlas-timeline header > span {
+  color: #8d9691;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.atlas-timeline h2 {
+  margin: 0.4rem 0 0;
+  color: inherit;
+  font-size: clamp(1.8rem, 4vw, 3.8rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+
+.timeline-chart {
+  position: relative;
+}
+
+.timeline-chart svg {
+  width: 100%;
+  height: clamp(170px, 24vw, 280px);
+  overflow: visible;
+}
+
+.timeline-guide,
+.timeline-line {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.timeline-guide {
+  stroke: rgba(234, 231, 223, 0.18);
+  stroke-width: 1;
+}
+
+.timeline-line {
+  stroke: #9db4b3;
+  stroke-width: 1.5;
+}
+
+.timeline-chart circle {
+  fill: #1d211f;
+  stroke: #c6d3d0;
+  stroke-width: 0.35;
+  vector-effect: non-scaling-stroke;
+}
+
+.timeline-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 1rem;
+  border-top: 1px solid rgba(234, 231, 223, 0.2);
+}
+
+.timeline-labels span {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.8rem;
+}
+
+.timeline-labels strong {
+  font-size: 0.86rem;
+  font-weight: 550;
+}
+
+.timeline-labels small {
+  color: #858d89;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+}
+
+.atlas-content {
+  width: min(100% - 3rem, 1280px);
+  margin: 0 auto;
+  padding: clamp(4rem, 8vw, 8rem) 0;
+}
+
+.atlas-content :deep(.base-dashboard-card) {
+  margin-bottom: clamp(4rem, 8vw, 7rem);
+  padding: 0;
+  border: 0;
+  border-top: 1px solid #252825;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.atlas-content :deep(.base-dashboard-card__header) {
+  margin: 0;
+  padding: 1rem 0 2rem;
+  border-bottom: 0;
+}
+
+.dashboard-card-title {
+  margin: 0;
+  color: #202320;
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  font-weight: 550;
+  letter-spacing: -0.045em;
+}
+
+.live-update,
+.status-bar,
+.favorites-bar {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.status-bar {
+  margin-bottom: 2rem;
+  border: 0;
+  border-top: 1px solid #aba9a3;
+  border-bottom: 1px solid #aba9a3;
+  color: #343a38;
+  background: transparent;
+}
+
+.stats-section {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-bottom: 5rem;
+  border-top: 1px solid #252825;
+  border-bottom: 1px solid #a5a39d;
+}
+
+.stat-card {
+  align-items: flex-start;
+  min-height: 150px;
+  padding: 1.4rem 0;
+  border: 0;
+  border-right: 1px solid #b7b4ad;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  box-shadow: none;
+}
+
+.stat-card + .stat-card {
+  padding-left: 1.4rem;
+}
+
+.stat-card:last-child {
+  border-right: 0;
+}
+
+.stat-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.stat-value {
+  color: #222723;
+  font-size: clamp(1.7rem, 4vw, 3rem);
+  font-weight: 450;
+  letter-spacing: -0.05em;
+}
+
+.list-controls {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #aaa8a2;
+}
+
+.status-filter button {
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  color: #555b57;
+  background: transparent;
+}
+
+.status-filter button:hover,
+.status-filter button.active {
+  border-bottom-color: currentColor;
+  color: #1f2421;
+  background: transparent;
+}
+
+.sort-control select {
+  border: 0;
+  border-bottom: 1px solid #81817c;
+  border-radius: 0;
+  background: transparent;
+}
+
+.weather-grid {
+  display: block;
+  border-top: 1px solid #242724;
+  counter-reset: city-row;
+}
+
+.city-index-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(520px, 1.22fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 5rem);
+}
+
+.city-index-preview {
+  position: sticky;
+  top: 1rem;
+  height: min(72svh, 760px);
+  overflow: hidden;
+  color: #f2efe7;
+  background: #252a27;
+  isolation: isolate;
+}
+
+.city-index-image,
+.city-index-shade {
+  position: absolute;
+  inset: 0;
+}
+
+.city-index-image {
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+}
+
+.city-index-shade {
+  z-index: -1;
+  background: rgba(13, 17, 16, 0.36);
+}
+
+.city-index-caption {
+  position: absolute;
+  right: 1.4rem;
+  bottom: 1.4rem;
+  left: 1.4rem;
+  display: grid;
+}
+
+.city-index-caption span {
+  margin-bottom: 0.75rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.city-index-caption strong {
+  font-size: clamp(3rem, 6vw, 6rem);
+  font-weight: 600;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+}
+
+.city-index-caption small {
+  margin-top: 0.9rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.city-index-data {
+  min-width: 0;
+}
+
+.weather-skeleton-grid {
+  display: block;
+}
+
+.weather-skeleton {
+  min-height: 110px;
+  border: 0;
+  border-bottom: 1px solid #aaa8a2;
+  border-radius: 0;
+  background: transparent;
+}
+
+.custom-detail-btn {
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  backdrop-filter: none;
+}
+
+.custom-detail-btn:hover {
+  color: inherit;
+  background: transparent;
+  transform: none;
+}
+
+@keyframes atlas-drift {
+  from {
+    transform: scale(1.06) translateX(0.6%);
+  }
+  to {
+    transform: scale(1.025) translateX(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .city-index-layout {
+    display: block;
+  }
+
+  .city-index-preview {
+    position: relative;
+    top: auto;
+    height: 58svh;
+    min-height: 440px;
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .atlas-hero {
+    min-height: 680px;
+  }
+
+  .atlas-frame {
+    width: calc(100% - 2rem);
+    padding-top: 8.8rem;
+  }
+
+  .atlas-index span:nth-child(2) {
+    display: none;
+  }
+
+  .atlas-copy {
+    top: 25%;
+    width: 100%;
+  }
+
+  .atlas-copy h1 {
+    font-size: clamp(4.2rem, 23vw, 7rem);
+  }
+
+  .atlas-temperature {
+    bottom: 7%;
+    font-size: clamp(8rem, 45vw, 13rem);
+  }
+
+  .atlas-metrics {
+    right: 0;
+    bottom: 28%;
+    width: 50%;
+  }
+
+  .atlas-city-rail {
+    right: auto;
+    bottom: 20%;
+    left: 0;
+    max-width: 100%;
+  }
+
+  .atlas-navigation {
+    bottom: 3%;
+  }
+
+  .atlas-timeline {
+    padding-inline: 1rem;
+  }
+
+  .atlas-timeline header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .timeline-labels span:nth-child(even) {
+    visibility: hidden;
+  }
+
+  .atlas-content {
+    width: calc(100% - 2rem);
+  }
+
+  .city-index-preview {
+    min-height: 420px;
+  }
+
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card,
+  .stat-card + .stat-card {
+    min-height: auto;
+    padding: 1rem 0;
+    border-right: 0;
+    border-bottom: 1px solid #aaa8a2;
+  }
+
+  .stat-card:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-backdrop,
+  .atlas-copy,
+  .atlas-temperature {
+    animation: none;
+    transition: none;
   }
 }
 </style>

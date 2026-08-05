@@ -37,11 +37,11 @@ const { unit, unitSymbol } = storeToRefs(configStore)
   min-height: 36px;
   padding: 0.35rem 0.65rem;
   border: 1px solid #cbd5e0;
-  border-radius: 999px;
+  border-radius: 0;
   background: #fff;
   color: #94a3b8;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+  box-shadow: none;
   transition:
     border-color 0.2s,
     box-shadow 0.2s,
@@ -50,7 +50,7 @@ const { unit, unitSymbol } = storeToRefs(configStore)
 
 .unit-button:hover {
   border-color: #4a90d9;
-  box-shadow: 0 4px 12px rgba(74, 144, 217, 0.16);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 

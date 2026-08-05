@@ -2,21 +2,21 @@
   <div class="about-page">
     <section class="about-card">
       <div class="card-header">
-        <h2>💡 서비스에서 할 수 있는 일</h2>
+        <h2>서비스에서 할 수 있는 일</h2>
       </div>
       <div class="feature-grid">
         <article>
-          <span aria-hidden="true">🔍</span>
+          <span aria-hidden="true">01</span>
           <h3>빠른 도시 검색</h3>
           <p>도시 이름을 입력해 원하는 지역의 날씨 카드를 바로 찾을 수 있습니다.</p>
         </article>
         <article>
-          <span aria-hidden="true">📊</span>
+          <span aria-hidden="true">02</span>
           <h3>날씨 통계 요약</h3>
           <p>검색 결과 수와 평균 기온, 가장 더운 도시를 실시간으로 확인합니다.</p>
         </article>
         <article>
-          <span aria-hidden="true">🗺️</span>
+          <span aria-hidden="true">03</span>
           <h3>지역별 상세 관측</h3>
           <p>도시별 체감 온도, 습도, 풍속과 강수 확률을 상세 화면에서 제공합니다.</p>
         </article>
@@ -25,7 +25,7 @@
 
     <section class="about-card technology-card">
       <div class="card-header">
-        <h2>🛠️ Vue 학습 요소</h2>
+        <h2>Vue 학습 요소</h2>
       </div>
       <ul>
         <li>Composition API와 <code>&lt;script setup&gt;</code></li>
@@ -42,9 +42,9 @@
 
 <style scoped>
 .about-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  max-width: 1180px;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
 }
 
 .page-heading {
@@ -68,12 +68,13 @@
 }
 
 .about-card {
-  margin-bottom: 1.25rem;
-  padding: 1.25rem;
-  border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 12px;
-  background: var(--color-background-soft, #f8f9fa);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  margin-bottom: 5rem;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid #292d2a;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .card-header {
@@ -96,10 +97,12 @@
 }
 
 .feature-grid article {
-  padding: 1.2rem;
-  border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 10px;
-  background: var(--color-background, #fff);
+  padding: 2rem 2rem 2rem 0;
+  border: 0;
+  border-right: 1px solid #aaa8a1;
+  border-bottom: 1px solid #aaa8a1;
+  border-radius: 0;
+  background: transparent;
 }
 
 .feature-grid article > span {
@@ -134,8 +137,8 @@
 .home-link {
   display: inline-flex;
   padding: 0.6rem 1rem;
-  border-radius: 8px;
-  background: #4a90d9;
+  border-radius: 0;
+  background: #303632;
   color: #fff;
   font-weight: 600;
 }

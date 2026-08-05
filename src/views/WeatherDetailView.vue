@@ -4,6 +4,10 @@ import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 import { useTemperature } from '@/composables/useTemperature'
 import { useWeatherStore } from '@/stores/weatherStore'
+import clearCityImage from '@/assets/weather-atlas/clear-city.jpg'
+import rainCityImage from '@/assets/weather-atlas/rain-city.jpg'
+import cloudCityImage from '@/assets/weather-atlas/cloud-city.jpg'
+import snowCityImage from '@/assets/weather-atlas/snow-city.jpg'
 
 const route = useRoute()
 const { formatTemperature } = useTemperature()
@@ -38,6 +42,21 @@ const detailClass = computed(() => {
   return classMap[city.value?.status] || 'detail-default'
 })
 
+const detailImage = computed(() => {
+  const imageMap = { 맑음: clearCityImage, 비: rainCityImage, 구름: cloudCityImage, 눈: snowCityImage }
+  return imageMap[city.value?.status] || cloudCityImage
+})
+
+const detailHeadline = computed(() => {
+  const headlineMap = {
+    맑음: 'CLEAR ABOVE THE CITY',
+    비: 'RAIN AFTER MIDNIGHT',
+    구름: 'CLOUDS OVER THE WATER',
+    눈: 'WHITE AIR, HIGH GROUND',
+  }
+  return headlineMap[city.value?.status] || 'WEATHER ACROSS THE CITY'
+})
+
 onMounted(async () => {
   if (!city.value && typeof route.query.city === 'string') {
     await weatherStore.searchCityWeather(route.query.city)
@@ -48,29 +67,29 @@ onMounted(async () => {
 <template>
   <div class="detail-page">
     <template v-if="city">
-      <div class="page-heading">
-        <p class="eyebrow">지역별 상세 기상관측</p>
-        <h1>{{ city.name }} 날씨</h1>
-        <p>{{ city.observedAt }} 기준 {{ dataSourceLabel }}입니다.</p>
-      </div>
+      <section class="weather-hero" :class="detailClass" :style="{ backgroundImage: `url(${detailImage})` }">
+        <div class="detail-shade" aria-hidden="true"></div>
+        <div class="page-heading">
+          <p class="eyebrow">{{ detailHeadline }}</p>
+          <h1>{{ city.name }}</h1>
+          <p>{{ city.observedAt }} / {{ dataSourceLabel }}</p>
+        </div>
 
-      <section class="weather-hero" :class="detailClass">
-        <div>
-          <span class="weather-icon" aria-hidden="true">{{ weatherIcon }}</span>
+        <div class="detail-temperature" :data-icon="weatherIcon">
           <p class="weather-status">
-            {{ city.status }}<template v-if="city.description"> · {{ city.description }}</template>
+            {{ city.status }}<template v-if="city.description"> / {{ city.description }}</template>
           </p>
           <h2>{{ formatTemperature(city.temp) }}</h2>
         </div>
         <div class="hero-summary">
-          <span>{{ city.name }}</span>
+          <span>CURRENT FEEL</span>
           <strong>체감 온도 {{ formatTemperature(city.feelsLike) }}</strong>
         </div>
       </section>
 
       <section class="observation-card" aria-labelledby="observation-title">
         <div class="card-header">
-          <h2 id="observation-title">📊 상세 관측 정보</h2>
+          <h2 id="observation-title">Detailed observation</h2>
           <span>{{ city.observedAt }} 업데이트</span>
         </div>
 
@@ -103,13 +122,13 @@ onMounted(async () => {
     </template>
 
     <section v-else-if="isSearching" class="empty-state" aria-live="polite">
-      <span aria-hidden="true">⏳</span>
+      <span aria-hidden="true">WAIT</span>
       <h1>실시간 날씨를 불러오는 중입니다</h1>
       <p>도시 관측 정보를 잠시만 기다려 주세요.</p>
     </section>
 
     <section v-else class="empty-state">
-      <span aria-hidden="true">🗺️</span>
+      <span aria-hidden="true">404</span>
       <h1>도시 정보를 찾을 수 없습니다</h1>
       <p v-if="searchError">{{ searchError }}</p>
       <p v-else>
@@ -164,25 +183,25 @@ onMounted(async () => {
   margin-bottom: 1.25rem;
   padding: 2rem;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 0;
   color: #fff;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  box-shadow: none;
 }
 
 .detail-sunny {
-  background: linear-gradient(135deg, #ff9a56 0%, #e8532e 100%);
+  background: #2d312d;
 }
 .detail-rainy {
-  background: linear-gradient(135deg, #667eea 0%, #3b5bdb 100%);
+  background: #1f292e;
 }
 .detail-cloudy {
-  background: linear-gradient(135deg, #a8c0d6 0%, #6b8caa 100%);
+  background: #4a5252;
 }
 .detail-snowy {
-  background: linear-gradient(135deg, #85cdc9 0%, #5eb5bd 100%);
+  background: #c8cecc;
 }
 .detail-default {
-  background: linear-gradient(135deg, #56ab2f 0%, #7fc94a 100%);
+  background: #333834;
 }
 
 .weather-icon {
@@ -225,9 +244,9 @@ onMounted(async () => {
   margin-bottom: 1.25rem;
   padding: 1.25rem;
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 12px;
+  border-radius: 0;
   background: var(--color-background-soft, #f8f9fa);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
 }
 
 .card-header {
@@ -262,7 +281,7 @@ onMounted(async () => {
 .observation-grid div {
   padding: 1rem 0.75rem;
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 10px;
+  border-radius: 0;
   background: var(--color-background, #fff);
   text-align: center;
 }
@@ -300,7 +319,7 @@ onMounted(async () => {
   display: inline-flex;
   padding: 0.6rem 1rem;
   border: 1px solid #4a90d9;
-  border-radius: 8px;
+  border-radius: 0;
   background: #4a90d9;
   color: #fff;
   font-weight: 600;
@@ -322,7 +341,7 @@ onMounted(async () => {
 .empty-state {
   padding: 4rem 1.5rem;
   border: 1px solid var(--color-border, #e9ecef);
-  border-radius: 14px;
+  border-radius: 0;
   background: var(--color-background-soft, #f8f9fa);
   text-align: center;
 }
@@ -361,6 +380,229 @@ onMounted(async () => {
   .card-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* Cinematic atlas detail */
+.detail-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 6rem;
+  color: #252925;
+}
+
+.weather-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  min-height: 680px;
+  height: 78svh;
+  margin: 0 0 clamp(4rem, 8vw, 8rem);
+  padding: clamp(6rem, 10vw, 9rem) max(3vw, calc((100vw - 1280px) / 2)) 4vw;
+  overflow: hidden;
+  border-radius: 0;
+  color: #f2efe7;
+  background-color: #222825;
+  background-position: center;
+  background-size: cover;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+.detail-sunny,
+.detail-rainy,
+.detail-cloudy,
+.detail-snowy,
+.detail-default {
+  background-color: #222825;
+}
+
+.detail-shade {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgba(12, 16, 15, 0.42);
+}
+
+.page-heading {
+  position: absolute;
+  top: clamp(6.5rem, 12vw, 10rem);
+  left: max(3vw, calc((100vw - 1280px) / 2));
+  margin: 0;
+  text-align: left;
+}
+
+.page-heading h1 {
+  margin: 0.6rem 0;
+  color: inherit;
+  font-size: clamp(4.5rem, 12vw, 11rem);
+  font-weight: 650;
+  letter-spacing: -0.075em;
+  line-height: 0.82;
+}
+
+.page-heading p:not(.eyebrow),
+.eyebrow {
+  color: inherit;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.detail-temperature {
+  align-self: end;
+}
+
+.weather-icon {
+  display: none;
+}
+
+.weather-status {
+  margin: 0 0 0.8rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.weather-hero h2 {
+  margin: 0 0 -0.13em -0.06em;
+  color: inherit;
+  font-size: clamp(9rem, 22vw, 20rem);
+  font-weight: 250;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.11em;
+  line-height: 0.7;
+}
+
+.hero-summary {
+  align-items: flex-end;
+  align-self: end;
+  padding-bottom: 0.5rem;
+  text-align: right;
+}
+
+.hero-summary span {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+}
+
+.hero-summary strong {
+  font-size: 0.9rem;
+}
+
+.observation-card,
+.navigation-actions {
+  width: min(100% - 3rem, 1280px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.observation-card {
+  margin-bottom: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid #262a27;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.card-header {
+  margin: 0;
+  padding: 1rem 0 2rem;
+  border-bottom: 1px solid #aaa8a1;
+}
+
+.card-header h2 {
+  color: #222623;
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  font-weight: 550;
+  letter-spacing: -0.045em;
+}
+
+.observation-grid {
+  display: block;
+}
+
+.observation-grid div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding: 1.15rem 0;
+  border: 0;
+  border-bottom: 1px solid #aaa8a1;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.observation-grid dt {
+  margin: 0;
+  color: #5e625e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.observation-grid dd {
+  color: #222623;
+  font-size: clamp(1.2rem, 2.5vw, 2rem);
+  font-weight: 450;
+}
+
+.back-link {
+  border-radius: 0;
+  color: #f0eee7;
+  background: #252a27;
+}
+
+.back-link.secondary {
+  border-color: #474d49;
+  color: #303632;
+  background: transparent;
+}
+
+.empty-state {
+  width: min(100% - 3rem, 900px);
+  margin: 4rem auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .weather-hero {
+    grid-template-columns: 1fr;
+    min-height: 680px;
+    padding: 7rem 1rem 1rem;
+  }
+
+  .page-heading {
+    top: 8rem;
+    left: 1rem;
+  }
+
+  .page-heading h1 {
+    font-size: clamp(4rem, 24vw, 7rem);
+  }
+
+  .weather-hero h2 {
+    font-size: clamp(8rem, 46vw, 13rem);
+  }
+
+  .hero-summary {
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    text-align: left;
+  }
+
+  .observation-card,
+  .navigation-actions {
+    width: calc(100% - 2rem);
   }
 }
 </style>

@@ -23,10 +23,10 @@
 .base-dashboard-card {
   background: var(--color-background-soft, #f8f9fa);
   padding: 1.25rem;
-  border-radius: 12px;
+  border-radius: 0;
   margin-bottom: 1.25rem;
   border: 1px solid var(--color-border, #e9ecef);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: none;
   transition:
     border-color 0.3s,
     box-shadow 0.3s;
