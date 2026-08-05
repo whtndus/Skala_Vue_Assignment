@@ -1,4 +1,4 @@
-# WEATHER / ATLAS
+# WEATHER
 
 Vue 3로 만든 실시간 날씨 저널입니다. 홈 대시보드, 도시별 상세 관측, 2D 지도와 옷차림 추천을 `Cinematic Weather Journal` 콘셉트로 구성하고, Vue 학습 예제는 `VUE / FIELD NOTES`에 함께 정리했습니다.
 
